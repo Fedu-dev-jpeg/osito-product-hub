@@ -46,6 +46,16 @@ const beneficios = [
 ];
 
 function Index() {
+  const { products, query, category } = useShop();
+  const categories = ["Todos", ...Array.from(new Set(products.map((p) => p.category)))];
+  const normalizedQuery = query.trim().toLowerCase();
+  const filtered = products.filter((product) => {
+    const matchesCategory = category === "Todos" || product.category === category;
+    const haystack =
+      `${product.name} ${product.category} ${product.subcategory ?? ""} ${product.description}`.toLowerCase();
+    return matchesCategory && (!normalizedQuery || haystack.includes(normalizedQuery));
+  });
+
   return (
     <div className="grain relative min-h-screen bg-background text-foreground">
       <div className="ui-text flex flex-wrap items-center justify-center gap-x-7 gap-y-1 bg-ink px-5 py-2.5 text-center text-[11.5px] uppercase tracking-[0.06em] text-parchment md:text-[12.5px]">
