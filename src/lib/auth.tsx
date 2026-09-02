@@ -115,15 +115,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async () => {
     const redirectTo = `${window.location.origin}/auth`;
-    const { error } = await getSupabase().auth.signInWithOAuth({
+    const { data, error } = await getSupabase().auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo,
-        skipBrowserRedirect: false,
+        skipBrowserRedirect: true,
         queryParams: { access_type: "offline", prompt: "consent" },
       },
     });
-    return error?.message ?? null;
+    if (error) return error.message;
+    if (data.url) window.location.assign(data.url);
+    return null;
   }, []);
 
   const signOut = useCallback(async () => {
