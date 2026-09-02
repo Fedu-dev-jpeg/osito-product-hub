@@ -242,23 +242,7 @@ function Index() {
               papelería. Sin spam.
             </p>
           </div>
-          <form
-            className="flex flex-col gap-3 sm:flex-row sm:items-center"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input
-              type="email"
-              placeholder="tu@correo.com.ar"
-              aria-label="Tu correo electrónico"
-              className="ui-text h-[46px] w-full rounded-sm border border-ink/25 bg-card px-3.5 text-sm text-ink outline-none placeholder:text-muted-foreground focus:border-gold sm:w-[320px]"
-            />
-            <button
-              type="submit"
-              className="ui-text inline-flex h-[46px] items-center justify-center rounded-sm bg-primary px-6 text-[13.5px] uppercase tracking-[0.08em] text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Suscribirme
-            </button>
-          </form>
+          <NewsletterForm />
         </div>
       </section>
 
