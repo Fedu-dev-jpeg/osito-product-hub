@@ -75,11 +75,13 @@ export const formatARS = (value: number) => money.format(value);
 
 export const navLinks = ["Librería", "Escolar", "Oficina", "Papelería", "Agendas"];
 
+export const pageShell = "mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-8";
+
 export function slugify(value: string) {
   return (
     String(value || "producto")
       .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")

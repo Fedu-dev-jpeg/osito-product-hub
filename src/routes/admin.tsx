@@ -15,7 +15,10 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Admin | Librería Callao" },
-      { name: "description", content: "Panel de administración de productos y configuración de Librería Callao." },
+      {
+        name: "description",
+        content: "Panel de administración de productos y configuración de Librería Callao.",
+      },
       { property: "og:title", content: "Admin | Librería Callao" },
       { property: "og:description", content: "Panel de administración de Librería Callao." },
       { name: "robots", content: "noindex" },
@@ -316,7 +319,10 @@ function AdminPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              saveSettings({ ...settings, freeShippingFrom: Number(settings.freeShippingFrom) || 0 });
+              saveSettings({
+                ...settings,
+                freeShippingFrom: Number(settings.freeShippingFrom) || 0,
+              });
               setMessage("Configuración guardada.");
             }}
             className="grid grid-cols-1 gap-4 sm:grid-cols-2"
@@ -332,12 +338,18 @@ function AdminPage() {
                 ["campaignAudience", "Audiencia"],
               ] as [keyof Settings, string][]
             ).map(([key, label]) => (
-              <label key={key} className="ui-text flex flex-col gap-1.5 text-[13px] text-foreground">
+              <label
+                key={key}
+                className="ui-text flex flex-col gap-1.5 text-[13px] text-foreground"
+              >
                 {label}
                 <input
                   value={settings[key]}
                   onChange={(e) =>
-                    setSettings({ ...settings, [key]: key === "freeShippingFrom" ? Number(e.target.value) : e.target.value })
+                    setSettings({
+                      ...settings,
+                      [key]: key === "freeShippingFrom" ? Number(e.target.value) : e.target.value,
+                    })
                   }
                   className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
                 />

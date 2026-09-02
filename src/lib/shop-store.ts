@@ -72,7 +72,8 @@ function hydrate() {
   const storedProducts = read<Product[] | null>(PRODUCT_KEY, null);
   state = {
     ...state,
-    products: Array.isArray(storedProducts) && storedProducts.length ? storedProducts : defaultProducts,
+    products:
+      Array.isArray(storedProducts) && storedProducts.length ? storedProducts : defaultProducts,
     cart: read<CartItem[]>(CART_KEY, []),
     favorites: read<string[]>(FAVORITES_KEY, []),
     stats: read<Stats>(STATS_KEY, {}),
@@ -123,7 +124,10 @@ export function track(eventName: string, details: Record<string, unknown> = {}) 
   write(STATS_KEY, stats);
   setState({ stats });
   if (typeof window !== "undefined") {
-    const w = window as unknown as { gtag?: Function; fbq?: Function };
+    const w = window as unknown as {
+      gtag?: (...args: unknown[]) => void;
+      fbq?: (...args: unknown[]) => void;
+    };
     w.gtag?.("event", eventName, details);
     w.fbq?.("trackCustom", eventName, details);
   }
@@ -160,6 +164,23 @@ export function addToCart(product: Product) {
   write(CART_KEY, cart);
   setState({ cart });
   track("add_to_cart", { productId: product.id, price: product.price });
+}
+
+export function setCartQty(id: string, qty: number) {
+  hydrate();
+  const cart =
+    qty <= 0
+      ? state.cart.filter((item) => item.id !== id)
+      : state.cart.map((item) => (item.id === id ? { ...item, qty } : item));
+  write(CART_KEY, cart);
+  setState({ cart });
+}
+
+export function removeFromCart(id: string) {
+  hydrate();
+  const cart = state.cart.filter((item) => item.id !== id);
+  write(CART_KEY, cart);
+  setState({ cart });
 }
 
 export function toggleFavorite(productId: string) {

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Heart, Menu, Search, ShoppingBag, X } from "lucide-react";
-import { formatARS, navLinks } from "./data";
+import { formatARS, navLinks, pageShell } from "./data";
 import { setCategory, setQuery, track, useShop } from "@/lib/shop-store";
+import { CartSheet } from "./CartSheet";
 
 const navCategoryMap: Record<string, string> = {
   Librería: "Libros",
@@ -18,28 +19,32 @@ function scrollToProducts() {
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const { cart, favorites, query, category } = useShop();
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
   const handleNav = (label: string) => {
     setCategory(navCategoryMap[label] ?? label);
+    setQuery("");
     setOpen(false);
     scrollToProducts();
   };
 
   return (
     <header className="relative z-20 border-b border-rule bg-background">
-      <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 py-5 md:px-12 md:py-6 lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-12">
+      <div
+        className={`${pageShell} flex flex-col gap-4 py-5 md:py-6 lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-8`}
+      >
         <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-col gap-1">
+          <Link to="/" className="flex min-w-0 flex-col gap-1">
             <span className="font-display text-xl font-medium leading-none tracking-[0.13em] text-primary md:text-[27px]">
               LIBRERÍA CALLAO
             </span>
             <span className="ui-text text-[9.5px] uppercase tracking-[0.24em] text-sepia">
               Libros y papelería · Buenos Aires
             </span>
-          </div>
+          </Link>
           <button
             type="button"
             aria-label={open ? "Cerrar menú" : "Abrir menú"}
@@ -89,14 +94,19 @@ export function SiteHeader() {
           <div className="h-5 w-px bg-ink/15" />
           <button
             type="button"
-            onClick={() => track("cart_view", { items: cartCount, total: cartTotal })}
+            onClick={() => {
+              setCartOpen(true);
+              track("cart_view", { items: cartCount, total: cartTotal });
+            }}
             className="flex items-center gap-2.5 text-[13px] text-ink"
           >
             <span className="relative block">
               <ShoppingBag size={20} strokeWidth={1.5} />
-              <span className="absolute -right-2 -top-2 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-primary px-1 text-[10.5px] font-semibold text-primary-foreground">
-                {cartCount}
-              </span>
+              {cartCount > 0 ? (
+                <span className="absolute -right-2 -top-2 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-primary px-1 text-[10.5px] font-semibold text-primary-foreground">
+                  {cartCount}
+                </span>
+              ) : null}
             </span>
             <span>Carrito</span>
             <span className="text-sepia">{formatARS(cartTotal)}</span>
@@ -104,8 +114,8 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <nav className="ui-text mx-auto hidden max-w-[1240px] items-center justify-between px-12 pb-4 lg:flex">
-        <div className="flex items-center gap-8">
+      <nav className={`${pageShell} ui-text hidden items-center justify-between pb-4 lg:flex`}>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-8 gap-y-2">
           {navLinks.map((link) => (
             <button
               key={link}
@@ -121,7 +131,7 @@ export function SiteHeader() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-6 text-[12.5px] text-sepia">
+        <div className="flex shrink-0 items-center gap-6 text-[12.5px] text-sepia">
           <button
             type="button"
             onClick={() => {
@@ -143,14 +153,14 @@ export function SiteHeader() {
           >
             Regalos
           </button>
-          <Link to="/admin" className="text-ink">
+          <Link to="/admin" className="text-ink hover:text-primary">
             Mi cuenta
           </Link>
         </div>
       </nav>
 
-      {open && (
-        <nav className="ui-text flex flex-col gap-1 border-t border-rule px-5 py-4 lg:hidden">
+      {open ? (
+        <nav className="ui-text flex flex-col gap-1 border-t border-rule px-4 py-4 sm:px-6 lg:hidden">
           {navLinks.map((link) => (
             <button
               key={link}
@@ -164,20 +174,31 @@ export function SiteHeader() {
           <Link
             to="/admin"
             onClick={() => setOpen(false)}
-            className="py-2.5 text-[13.5px] uppercase tracking-[0.1em] text-ink"
+            className="border-b border-rule py-2.5 text-[13.5px] uppercase tracking-[0.1em] text-ink"
           >
             Mi cuenta
           </Link>
-          <div className="mt-2 flex items-center gap-5 text-[13px] text-ink">
+          <div className="mt-2 flex flex-wrap items-center gap-5 text-[13px] text-ink">
             <span className="flex items-center gap-2">
               <Heart size={17} strokeWidth={1.5} /> Favoritos ({favorites.length})
             </span>
-            <span className="flex items-center gap-2">
+            <button
+              type="button"
+              className="flex items-center gap-2"
+              onClick={() => {
+                setCartOpen(true);
+                setOpen(false);
+                track("cart_view", { items: cartCount, total: cartTotal });
+              }}
+            >
               <ShoppingBag size={17} strokeWidth={1.5} /> Carrito · {formatARS(cartTotal)}
-            </span>
+              {cartCount > 0 ? ` (${cartCount})` : ""}
+            </button>
           </div>
         </nav>
-      )}
+      ) : null}
+
+      <CartSheet open={cartOpen} onOpenChange={setCartOpen} />
     </header>
   );
 }
