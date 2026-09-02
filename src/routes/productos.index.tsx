@@ -1,24 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { ProductCard } from "@/components/callao/ProductCard";
 import { SiteFooter } from "@/components/callao/SiteFooter";
 import { SiteHeader } from "@/components/callao/SiteHeader";
-import { formatARS, pageShell } from "@/components/callao/data";
-import { setCategory, setQuery, useShop } from "@/lib/shop-store";
+import { MobileStickyCta, WhatsAppFloat } from "@/components/callao/WhatsAppFloat";
+import { pageShell, productHaystack } from "@/components/callao/data";
+import { catalogCategories, SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
+import { setCategory, setQuery, track, useShop } from "@/lib/shop-store";
+import { whatsappUrl } from "@/lib/whatsapp";
 
 type ProductosSearch = {
   q?: string;
   categoria?: string;
+  sub?: string;
   sort?: string;
-  min?: string;
-  max?: string;
-  stock?: string;
 };
 
 const sorts = [
   { id: "featured", label: "Destacados" },
-  { id: "price-asc", label: "Precio: menor a mayor" },
-  { id: "price-desc", label: "Precio: mayor a menor" },
   { id: "alpha", label: "Alfabético" },
   { id: "newest", label: "Más nuevos" },
 ];
@@ -29,20 +28,16 @@ export const Route = createFileRoute("/productos/")({
     if (typeof search["q"] === "string" && search["q"]) next.q = search["q"];
     if (typeof search["categoria"] === "string" && search["categoria"])
       next.categoria = search["categoria"];
+    if (typeof search["sub"] === "string" && search["sub"]) next.sub = search["sub"];
     if (typeof search["sort"] === "string" && search["sort"]) next.sort = search["sort"];
-    if (typeof search["min"] === "string" && search["min"]) next.min = search["min"];
-    if (typeof search["max"] === "string" && search["max"]) next.max = search["max"];
-    if (typeof search["stock"] === "string" && search["stock"]) next.stock = search["stock"];
     return next;
   },
   head: () => ({
     meta: [
-      { title: "Productos — Librería Callao" },
-      {
-        name: "description",
-        content: "Catálogo de libros, papelería, escritura y agendas. Filtrá por tipo y precio.",
-      },
+      { title: `Productos — ${SITE_NAME}` },
+      { name: "description", content: SITE_DESCRIPTION },
     ],
+    links: [{ rel: "canonical", href: "/productos" }],
   }),
   component: ProductosPage,
 });
@@ -50,49 +45,59 @@ export const Route = createFileRoute("/productos/")({
 function ProductosPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const { products } = useShop();
+  const { products, settings } = useShop();
   const categoria = search.categoria ?? "Todos";
+  const sub = search.sub ?? "";
   const sort = search.sort ?? "featured";
   const q = search.q ?? "";
 
-  const categories = ["Todos", ...Array.from(new Set(products.map((p) => p.category)))];
-  const maxCatalog = products.reduce((max, p) => Math.max(max, p.price), 0);
-  const minPrice = Number(search.min) || 0;
-  const maxPrice = Number(search.max) || maxCatalog;
+  useEffect(() => {
+    setQuery(q);
+    if (categoria) setCategory(categoria);
+    if (q) track("search", { query: q });
+  }, [q, categoria]);
+
+  const categories = ["Todos", ...catalogCategories.map((c) => c.name)];
+  const current = catalogCategories.find((c) => c.name === categoria);
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
     const list = products.filter((product) => {
       const matchesCategory = categoria === "Todos" || product.category === categoria;
-      const haystack =
-        `${product.name} ${product.category} ${product.subcategory ?? ""} ${product.description} ${product.sku ?? ""}`.toLowerCase();
-      const matchesQuery = !query || haystack.includes(query);
-      const matchesPrice =
-        product.price >= minPrice && product.price <= (maxPrice || product.price);
-      const matchesStock = search.stock !== "1" || (product.inventory ?? 1) > 0;
-      return matchesCategory && matchesQuery && matchesPrice && matchesStock;
+      const matchesSub = !sub || product.subcategory === sub;
+      const matchesQuery = !query || productHaystack(product).includes(query);
+      return matchesCategory && matchesSub && matchesQuery;
     });
     const ordered = [...list];
-    if (sort === "price-asc") ordered.sort((a, b) => a.price - b.price);
-    if (sort === "price-desc") ordered.sort((a, b) => b.price - a.price);
     if (sort === "alpha") ordered.sort((a, b) => a.name.localeCompare(b.name, "es"));
+    if (sort === "featured") {
+      ordered.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    }
     return ordered;
-  }, [products, categoria, q, minPrice, maxPrice, search.stock, sort]);
+  }, [products, categoria, sub, q, sort]);
 
   const patchSearch = (partial: ProductosSearch) => {
     const next = { ...search, ...partial };
     (Object.keys(next) as (keyof ProductosSearch)[]).forEach((key) => {
       if (!next[key] || next[key] === "Todos" || next[key] === "featured") delete next[key];
     });
-    if (partial.categoria) setCategory(partial.categoria);
+    if (partial.categoria !== undefined) {
+      setCategory(partial.categoria || "Todos");
+      delete next.sub;
+    }
     if (partial.q !== undefined) setQuery(partial.q);
     void navigate({ to: "/productos", search: next });
   };
 
+  const emptyMessage = q
+    ? "¿No encontraste lo que buscabas?"
+    : "Todavía no hay productos publicados en esta categoría.";
+  const wa = whatsappUrl(q ? { kind: "search", query: q } : { kind: "home" }, settings.whatsapp);
+
   return (
     <div className="grain min-h-screen bg-background text-foreground">
       <div className="ui-text bg-ink px-4 py-2 text-center text-[11.5px] uppercase tracking-[0.08em] text-parchment">
-        Envío sin cargo desde $80.000 · Retiro en Av. Callao 1234
+        3 sucursales en Recoleta · Escolar · Comercial · Artística
       </div>
       <SiteHeader />
       <div className={`${pageShell} py-8 md:py-10`}>
@@ -109,6 +114,7 @@ function ProductosPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               {filtered.length} {filtered.length === 1 ? "producto" : "productos"}
               {categoria !== "Todos" ? ` en ${categoria}` : ""}
+              {q ? ` para “${q}”` : ""}
             </p>
           </div>
           <label className="ui-text text-[12px] text-sepia">
@@ -129,60 +135,44 @@ function ProductosPage() {
 
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[240px_minmax(0,1fr)]">
           <aside className="rounded-md border border-rule bg-card p-5">
-            <h2 className="ui-text text-[11px] uppercase tracking-[0.16em] text-gold">Filtros</h2>
-            <div className="mt-4 flex flex-col gap-5">
-              <div>
-                <p className="ui-text mb-2 text-[12px] text-sepia">Tipo de producto</p>
+            <h2 className="ui-text text-[11px] uppercase tracking-[0.16em] text-gold">Categorías</h2>
+            <ul className="mt-4 flex flex-col gap-1.5">
+              {categories.map((cat) => (
+                <li key={cat}>
+                  <button
+                    type="button"
+                    onClick={() => patchSearch({ categoria: cat, sub: "" })}
+                    className={`ui-text min-h-10 text-left text-[13px] ${
+                      categoria === cat ? "text-primary" : "text-ink hover:text-primary"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {current?.subs.length ? (
+              <div className="mt-5 border-t border-rule pt-4">
+                <p className="ui-text mb-2 text-[11px] uppercase tracking-[0.16em] text-gold">
+                  Subcategorías
+                </p>
                 <ul className="flex flex-col gap-1.5">
-                  {categories.map((cat) => (
-                    <li key={cat}>
+                  {current.subs.map((item) => (
+                    <li key={item}>
                       <button
                         type="button"
-                        onClick={() => patchSearch({ categoria: cat })}
-                        className={`ui-text text-[13px] ${
-                          categoria === cat ? "text-primary" : "text-ink hover:text-primary"
+                        onClick={() => patchSearch({ sub: item })}
+                        className={`ui-text min-h-9 text-left text-[13px] ${
+                          sub === item ? "text-primary" : "text-ink hover:text-primary"
                         }`}
                       >
-                        {cat}
+                        {item}
                       </button>
                     </li>
                   ))}
                 </ul>
               </div>
-              <label className="ui-text text-[12px] text-sepia">
-                Precio mínimo
-                <input
-                  type="number"
-                  min={0}
-                  value={search.min ?? ""}
-                  placeholder="0"
-                  onChange={(e) => patchSearch({ min: e.target.value })}
-                  className="mt-1 h-9 w-full rounded-sm border border-ink/20 px-2 text-sm"
-                />
-              </label>
-              <label className="ui-text text-[12px] text-sepia">
-                Precio máximo
-                <input
-                  type="number"
-                  min={0}
-                  value={search.max ?? ""}
-                  placeholder={maxCatalog ? String(maxCatalog) : ""}
-                  onChange={(e) => patchSearch({ max: e.target.value })}
-                  className="mt-1 h-9 w-full rounded-sm border border-ink/20 px-2 text-sm"
-                />
-              </label>
-              <label className="ui-text flex items-center gap-2 text-[13px] text-ink">
-                <input
-                  type="checkbox"
-                  checked={search.stock === "1"}
-                  onChange={(e) => patchSearch(e.target.checked ? { stock: "1" } : { stock: "" })}
-                />
-                Solo en stock
-              </label>
-              <p className="ui-text text-[11px] text-muted-foreground">
-                Hasta {formatARS(maxCatalog || 0)}
-              </p>
-            </div>
+            ) : null}
           </aside>
 
           <div>
@@ -193,14 +183,30 @@ function ProductosPage() {
                 ))}
               </div>
             ) : (
-              <p className="rounded-md border border-rule bg-card px-6 py-10 text-sm text-muted-foreground">
-                No hay productos con esos filtros.
-              </p>
+              <div className="rounded-md border border-rule bg-card px-6 py-10">
+                <p className="font-display text-2xl text-ink">{emptyMessage}</p>
+                <p className="mt-2 max-w-[48ch] text-sm text-muted-foreground">
+                  Consultanos por WhatsApp y te ayudamos a encontrarlo.
+                </p>
+                <a
+                  href={wa}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() =>
+                    track("click_whatsapp", { source: "empty-search", query: q, category: categoria })
+                  }
+                  className="ui-text mt-5 inline-flex min-h-11 items-center rounded-sm bg-primary px-5 text-[13px] uppercase tracking-[0.08em] text-primary-foreground"
+                >
+                  Consultanos por WhatsApp
+                </a>
+              </div>
             )}
           </div>
         </div>
       </div>
       <SiteFooter />
+      <WhatsAppFloat />
+      <MobileStickyCta />
     </div>
   );
 }

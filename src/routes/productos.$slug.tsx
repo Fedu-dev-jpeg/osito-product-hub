@@ -1,26 +1,32 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
 import { SiteFooter } from "@/components/callao/SiteFooter";
 import { SiteHeader } from "@/components/callao/SiteHeader";
+import { MobileStickyCta, WhatsAppFloat } from "@/components/callao/WhatsAppFloat";
 import { formatARS, pageShell } from "@/components/callao/data";
-import { addToCart, useShop } from "@/lib/shop-store";
+import { SITE_NAME } from "@/lib/site";
+import { track, useShop } from "@/lib/shop-store";
+import { whatsappUrl } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/productos/$slug")({
   head: ({ params }) => ({
-    meta: [{ title: `${params.slug} — Librería Callao` }],
+    meta: [{ title: `${params.slug} — ${SITE_NAME}` }],
   }),
   component: ProductDetailPage,
 });
 
 function ProductDetailPage() {
   const { slug } = Route.useParams();
-  const { products } = useShop();
-  const [qty, setQty] = useState(1);
+  const { products, settings } = useShop();
   const product = useMemo(
     () => products.find((item) => item.slug === slug || item.id === slug),
     [products, slug],
   );
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    if (product) track("view_item", { item_name: product.name, item_id: product.id });
+  }, [product]);
 
   if (!product) {
     return (
@@ -28,16 +34,24 @@ function ProductDetailPage() {
         <SiteHeader />
         <div className={`${pageShell} py-20 text-center`}>
           <h1 className="font-display text-3xl text-ink">Producto no encontrado</h1>
-          <Link to="/productos" className="ui-text mt-4 inline-block text-primary">
-            Volver al catálogo
-          </Link>
+          <p className="mt-2 text-sm text-muted-foreground">
+            ¿No encontraste lo que buscabas? Consultanos por WhatsApp y te ayudamos a encontrarlo.
+          </p>
+          <div className="mt-6 flex justify-center gap-4">
+            <Link to="/productos" className="ui-text text-primary">
+              Volver al catálogo
+            </Link>
+          </div>
         </div>
+        <WhatsAppFloat />
+        <MobileStickyCta />
       </div>
     );
   }
 
   const onSale = Boolean(product.compareAtPrice && product.compareAtPrice > product.price);
-  const inStock = (product.inventory ?? 1) > 0;
+  const images = product.images?.length ? product.images : product.image ? [product.image] : [];
+  const wa = whatsappUrl({ kind: "product", name: product.name }, settings.whatsapp);
 
   return (
     <div className="grain min-h-screen bg-background text-foreground">
@@ -56,17 +70,42 @@ function ProductDetailPage() {
         </nav>
 
         <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2">
-          <div className="overflow-hidden rounded-md border border-rule bg-secondary">
-            {product.image ? (
-              <img src={product.image} alt={product.name} className="w-full object-cover" />
-            ) : (
-              <div className="flex aspect-square items-center justify-center font-display text-4xl italic text-sepia">
-                {product.name}
+          <div>
+            <div className="overflow-hidden rounded-md border border-rule bg-secondary">
+              {images[active] ? (
+                <img
+                  src={images[active]}
+                  alt={product.name}
+                  className="w-full object-cover"
+                  width={900}
+                  height={900}
+                />
+              ) : (
+                <div className="flex aspect-square items-center justify-center font-display text-4xl italic text-sepia">
+                  {product.name}
+                </div>
+              )}
+            </div>
+            {images.length > 1 ? (
+              <div className="mt-3 flex gap-2">
+                {images.map((src, i) => (
+                  <button
+                    key={src}
+                    type="button"
+                    onClick={() => setActive(i)}
+                    className={`h-16 w-16 overflow-hidden rounded-sm border ${
+                      i === active ? "border-primary" : "border-rule"
+                    }`}
+                  >
+                    <img src={src} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
               </div>
-            )}
+            ) : null}
           </div>
           <div>
             <p className="ui-text text-[11px] uppercase tracking-[0.18em] text-gold">
+              {product.brand ? `${product.brand} · ` : ""}
               {product.category}
               {product.subcategory ? ` · ${product.subcategory}` : ""}
             </p>
@@ -74,52 +113,49 @@ function ProductDetailPage() {
             {product.sku ? (
               <p className="ui-text mt-2 text-[12px] text-muted-foreground">SKU {product.sku}</p>
             ) : null}
-            <div className="mt-4 flex items-end gap-3">
-              <span className="ui-text text-3xl font-semibold tabular-nums text-primary">
-                {formatARS(product.price)}
-              </span>
-              {onSale ? (
-                <span className="ui-text text-lg text-muted-foreground line-through">
-                  {formatARS(product.compareAtPrice ?? 0)}
+            {product.price > 0 ? (
+              <div className="mt-4 flex items-end gap-3">
+                <span className="ui-text text-3xl font-semibold tabular-nums text-primary">
+                  {formatARS(product.price)}
                 </span>
-              ) : null}
-            </div>
-            <p className="mt-5 max-w-[52ch] text-[15px] leading-relaxed text-foreground/80">
-              {product.description}
-            </p>
-            <p className="ui-text mt-4 text-[12px] text-sepia">
-              {inStock
-                ? `En stock${product.inventory ? ` · ${product.inventory} disponibles` : ""}`
-                : "Sin stock"}
-            </p>
+                {onSale ? (
+                  <span className="ui-text text-lg text-muted-foreground line-through">
+                    {formatARS(product.compareAtPrice ?? 0)}
+                  </span>
+                ) : null}
+              </div>
+            ) : (
+              <p className="ui-text mt-4 text-sm text-sepia">Consultá disponibilidad y precio</p>
+            )}
+            {product.description ? (
+              <p className="mt-5 max-w-[52ch] text-[15px] leading-relaxed text-foreground/80">
+                {product.description}
+              </p>
+            ) : null}
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <label className="ui-text text-[12px] text-sepia">
-                Cantidad
-                <input
-                  type="number"
-                  min={1}
-                  max={product.inventory ?? 99}
-                  value={qty}
-                  onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
-                  className="ml-2 h-11 w-20 rounded-sm border border-ink/20 px-2 text-sm"
-                />
-              </label>
-              <button
-                type="button"
-                disabled={!inStock}
-                onClick={() => {
-                  for (let i = 0; i < qty; i += 1) addToCart(product);
-                  toast.success(`Agregaste ${product.name}`);
-                }}
-                className="ui-text h-11 rounded-sm bg-primary px-6 text-[13px] uppercase tracking-[0.08em] text-primary-foreground disabled:opacity-50"
+              <a
+                href={wa}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track("click_whatsapp", { product: product.name, source: "pdp" })}
+                className="ui-text inline-flex h-12 items-center rounded-sm bg-primary px-6 text-[13px] uppercase tracking-[0.08em] text-primary-foreground"
               >
-                Agregar al carrito
-              </button>
+                Consultar por WhatsApp
+              </a>
+              <Link
+                to="/productos"
+                search={{ categoria: product.category }}
+                className="ui-text text-[13px] text-sepia hover:text-ink"
+              >
+                Ver más de {product.category}
+              </Link>
             </div>
           </div>
         </div>
       </div>
       <SiteFooter />
+      <WhatsAppFloat context={{ kind: "product", name: product.name }} />
+      <MobileStickyCta />
     </div>
   );
 }

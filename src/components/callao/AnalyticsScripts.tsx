@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { getSettings } from "@/lib/shop-store";
+import { useShop } from "@/lib/shop-store";
 
 function ensureScript(id: string, src: string) {
   if (document.getElementById(id)) return;
@@ -11,8 +11,8 @@ function ensureScript(id: string, src: string) {
 }
 
 export function AnalyticsScripts() {
+  const { settings } = useShop();
   useEffect(() => {
-    const settings = getSettings();
     const gaId = settings.googleAnalyticsId.trim();
     const pixelId = settings.metaPixelId.trim();
 
@@ -56,7 +56,7 @@ export function AnalyticsScripts() {
       w.fbq?.("init", pixelId);
       w.fbq?.("track", "PageView");
     }
-  }, []);
+  }, [settings.googleAnalyticsId, settings.metaPixelId]);
 
   return null;
 }

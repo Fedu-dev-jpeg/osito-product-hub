@@ -7,7 +7,7 @@ import { SiteHeader } from "@/components/callao/SiteHeader";
 import { formatARS, pageShell } from "@/components/callao/data";
 import { useAuth } from "@/lib/auth";
 import { lookupDiscount, placeOrder, quoteOrder, type DiscountCode } from "@/lib/orders";
-import { clearCart, getSettings, useShop } from "@/lib/shop-store";
+import { clearCart, useShop } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -28,7 +28,6 @@ function CheckoutForm() {
   const { user } = useAuth();
   const { cart, products } = useShop();
   const navigate = useNavigate();
-  const settings = getSettings();
   const [fulfillment, setFulfillment] = useState<"retiro" | "envio">("retiro");
   const [code, setCode] = useState("");
   const [coupon, setCoupon] = useState<DiscountCode | null>(null);
@@ -36,8 +35,8 @@ function CheckoutForm() {
   const [busy, setBusy] = useState(false);
 
   const totals = useMemo(
-    () => quoteOrder(cart, fulfillment, coupon, settings.freeShippingFrom),
-    [cart, fulfillment, coupon, settings.freeShippingFrom],
+    () => quoteOrder(cart, fulfillment, coupon, Number.MAX_SAFE_INTEGER),
+    [cart, fulfillment, coupon],
   );
 
   const applyCode = async () => {
@@ -116,7 +115,7 @@ function CheckoutForm() {
                     checked={fulfillment === "retiro"}
                     onChange={() => setFulfillment("retiro")}
                   />
-                  Retiro en Av. Callao 1234
+                  Retiro en sucursal (Recoleta)
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <input
