@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { ArrowRight, ShieldCheck, Store, Truck } from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
 import tiendaImg from "@/assets/tienda.jpg";
 import { SiteHeader } from "@/components/callao/SiteHeader";
 import { ProductCard } from "@/components/callao/ProductCard";
-import { products } from "@/components/callao/data";
+import { setCategory, track, useShop } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
