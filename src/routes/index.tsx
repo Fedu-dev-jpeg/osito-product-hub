@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowRight, ShieldCheck, Store, Truck } from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
 import tiendaImg from "@/assets/tienda.jpg";
+import { SiteFooter } from "@/components/callao/SiteFooter";
 import { SiteHeader } from "@/components/callao/SiteHeader";
 import { ProductCard } from "@/components/callao/ProductCard";
 import { pageShell } from "@/components/callao/data";
@@ -82,17 +83,17 @@ function Index() {
             </p>
             <div className="flex flex-wrap items-center gap-5">
               <a
-                href="#destacados"
+                href="/productos"
                 className="ui-text inline-flex items-center gap-2.5 rounded-sm bg-primary px-7 py-3.5 text-sm uppercase tracking-[0.08em] text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 Ver productos
                 <ArrowRight size={16} strokeWidth={1.7} />
               </a>
               <a
-                href="#destacados"
+                href="/productos"
                 className="ui-text border-b border-ink/35 pb-0.5 text-sm text-ink transition-colors hover:border-gold hover:text-primary"
               >
-                Ver catálogo escolar 2026
+                Ver catálogo completo
               </a>
             </div>
             <div className="ui-text mt-10 flex flex-wrap gap-6 border-t border-rule pt-6 text-[11.5px] tracking-[0.05em] text-sepia md:mt-12 md:gap-10">
@@ -151,7 +152,7 @@ function Index() {
               </h2>
             </div>
             <div className="ui-text flex flex-wrap items-center gap-x-6 gap-y-2 text-[12.5px] uppercase tracking-[0.06em] md:pb-1.5">
-              {categories.map((cat) => (
+              {categories.slice(0, 6).map((cat) => (
                 <button
                   key={cat}
                   type="button"
@@ -165,6 +166,9 @@ function Index() {
                   {cat}
                 </button>
               ))}
+              <a href="/productos" className="text-primary">
+                Ver todos
+              </a>
             </div>
           </div>
 
@@ -295,84 +299,5 @@ function NewsletterForm() {
         </p>
       ) : null}
     </div>
-  );
-}
-
-const footerCols = [
-  { title: "Comprar", links: ["Librería", "Escolar", "Oficina", "Papelería", "Agendas"] },
-  {
-    title: "Ayuda",
-    links: [
-      "Envíos y retiro",
-      "Medios de pago",
-      "Cambios y devoluciones",
-      "Listas escolares",
-      "Preguntas frecuentes",
-    ],
-  },
-  {
-    title: "La casa",
-    links: [
-      "Nuestra historia",
-      "Encuentros y firmas",
-      "Venta institucional",
-      "Trabajá con nosotros",
-    ],
-  },
-];
-
-function SiteFooter() {
-  return (
-    <footer className="relative z-[2] bg-secondary">
-      <div
-        className={`${pageShell} grid grid-cols-1 gap-10 pb-8 pt-12 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr] lg:gap-12 lg:pt-14`}
-      >
-        <div className="min-w-0">
-          <span className="mb-3 block font-display text-xl font-medium tracking-[0.13em] text-primary">
-            LIBRERÍA CALLAO
-          </span>
-          <p className="mb-3.5 max-w-[34ch] text-[13px] leading-[1.7] text-foreground/75">
-            Av. Callao 1234, C1023 CABA
-            <br />
-            Lunes a sábado de 9 a 20 h
-          </p>
-          <p className="text-[13px] leading-[1.7] text-foreground/75">
-            +54 11 4372 0000
-            <br />
-            hola@libreriacallao.com.ar
-          </p>
-        </div>
-        {footerCols.map((col) => (
-          <div key={col.title} className="ui-text flex min-w-0 flex-col gap-2.5">
-            <span className="mb-1 text-[10.5px] uppercase tracking-[0.2em] text-gold">
-              {col.title}
-            </span>
-            {col.links.map((link) => (
-              <a
-                key={link}
-                href="#destacados"
-                className="text-[13px] text-foreground hover:text-primary"
-              >
-                {link}
-              </a>
-            ))}
-          </div>
-        ))}
-      </div>
-      <div
-        className={`${pageShell} ui-text flex flex-col gap-3 border-t border-rule pb-8 pt-4 text-[11.5px] text-muted-foreground md:flex-row md:items-center md:justify-between`}
-      >
-        <span>© 2026 Librería Callao · Buenos Aires, Argentina</span>
-        <div className="flex flex-wrap gap-x-5 gap-y-1">
-          <span>Precios en pesos argentinos (ARS), IVA incluido</span>
-          <a href="#" className="hover:text-ink">
-            Términos
-          </a>
-          <a href="#" className="hover:text-ink">
-            Privacidad
-          </a>
-        </div>
-      </div>
-    </footer>
   );
 }

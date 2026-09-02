@@ -20,7 +20,7 @@ export function RequireAuth({ role, children }: { role?: UserRole; children: Rea
         <div className="max-w-md text-center">
           <h1 className="font-display text-3xl text-ink">Necesitás entrar</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Esta sección es solo para cuentas de la librería.
+            Iniciá sesión para ver tus pedidos. Si entras como admin vas al panel de la tienda.
           </p>
           <Link
             to="/auth"

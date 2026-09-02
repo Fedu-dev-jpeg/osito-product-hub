@@ -15,7 +15,13 @@ import {
   SUPABASE_URL,
 } from "@/lib/supabase";
 
-export type UserRole = "admin" | "vendedor";
+export type UserRole = "admin" | "vendedor" | "cliente";
+
+export function homePathForRole(role: UserRole | null | undefined) {
+  if (role === "admin") return "/admin";
+  if (role === "vendedor") return "/vendedor";
+  return "/cuenta";
+}
 
 export type Profile = {
   id: string;
@@ -31,7 +37,11 @@ type AuthContextValue = {
   profile: Profile | null;
   role: UserRole | null;
   signIn: (identifier: string, password: string) => Promise<string | null>;
-  signUp: (email: string, password: string) => Promise<string | null>;
+  signUp: (
+    email: string,
+    password: string,
+    accountType?: "cliente" | "vendedor",
+  ) => Promise<string | null>;
   signInWithGoogle: () => Promise<string | null>;
   signOut: () => Promise<void>;
 };
@@ -45,7 +55,7 @@ async function loadProfile(userId: string): Promise<Profile | null> {
     .eq("id", userId)
     .maybeSingle();
   if (error || !data) return null;
-  const role = data.role === "admin" ? "admin" : "vendedor";
+  const role = data.role === "admin" ? "admin" : data.role === "vendedor" ? "vendedor" : "cliente";
   return {
     id: data.id as string,
     email: (data.email as string | null) ?? null,
@@ -107,16 +117,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error?.message ?? null;
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
-    const { data, error } = await getSupabase().auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-    if (error) return error.message;
-    if (!data.session)
-      return "Revisá tu email para confirmar la cuenta, o entrá si ya está activa.";
-    return null;
-  }, []);
+  const signUp = useCallback(
+    async (email: string, password: string, accountType: "cliente" | "vendedor" = "cliente") => {
+      const { data, error } = await getSupabase().auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: { data: { account_type: accountType } },
+      });
+      if (error) return error.message;
+      if (!data.session)
+        return "Revisá tu email para confirmar la cuenta, o entrá si ya está activa.";
+      return null;
+    },
+    [],
+  );
 
   const signInWithGoogle = useCallback(async () => {
     const redirectTo = `${window.location.origin}/auth`;
@@ -132,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const body = (await probe.json().catch(() => null)) as { msg?: string } | null;
       const msg = body?.msg ?? "";
       if (/not enabled|Unsupported provider/i.test(msg)) {
-        return "Google todavía no está habilitado. Entrá con usuario admin y la contraseña.";
+        return "Google todavía no está habilitado. Entrá con tu email o, si sos admin, con usuario admin.";
       }
       return msg || "No se pudo continuar con Google.";
     }
@@ -147,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) {
       return /provider is not enabled|Unsupported provider/i.test(error.message)
-        ? "Google todavía no está habilitado. Entrá con usuario admin y la contraseña."
+        ? "Google todavía no está habilitado. Entrá con tu email o, si sos admin, con usuario admin."
         : error.message;
     }
     if (data.url) window.location.assign(data.url);

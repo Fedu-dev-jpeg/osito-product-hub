@@ -194,6 +194,12 @@ export function removeFromCart(id: string) {
   setState({ cart });
 }
 
+export function clearCart() {
+  hydrate();
+  write(CART_KEY, []);
+  setState({ cart: [] });
+}
+
 export function toggleFavorite(productId: string) {
   hydrate();
   const favorites = state.favorites.includes(productId)

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Heart, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { formatARS, navLinks, pageShell } from "./data";
 import { useAuth } from "@/lib/auth";
@@ -7,16 +7,13 @@ import { setCategory, setQuery, track, useShop } from "@/lib/shop-store";
 import { CartSheet } from "./CartSheet";
 
 const navCategoryMap: Record<string, string> = {
+  Productos: "Todos",
   Librería: "Libros",
   Escolar: "Escolar",
   Oficina: "Escritura",
   Papelería: "Papelería",
   Agendas: "Agendas",
 };
-
-function scrollToProducts() {
-  document.getElementById("destacados")?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
 
 function AccountLink({ className, onClick }: { className?: string; onClick?: () => void }) {
   const { session, profile } = useAuth();
@@ -34,9 +31,16 @@ function AccountLink({ className, onClick }: { className?: string; onClick?: () 
       </Link>
     );
   }
+  if (profile.role === "vendedor") {
+    return (
+      <Link to="/vendedor" onClick={onClick} className={className}>
+        Vendedor
+      </Link>
+    );
+  }
   return (
-    <Link to="/vendedor" onClick={onClick} className={className}>
-      Vendedor
+    <Link to="/cuenta" onClick={onClick} className={className}>
+      Cuenta
     </Link>
   );
 }
@@ -44,15 +48,24 @@ function AccountLink({ className, onClick }: { className?: string; onClick?: () 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const navigate = useNavigate();
   const { cart, favorites, query, category } = useShop();
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
-  const handleNav = (label: string) => {
-    setCategory(navCategoryMap[label] ?? label);
-    setQuery("");
+  const goToCollection = (nextCategory: string, nextQuery = "") => {
+    setCategory(nextCategory);
+    setQuery(nextQuery);
     setOpen(false);
-    scrollToProducts();
+    const search = nextCategory && nextCategory !== "Todos" ? { categoria: nextCategory } : {};
+    void navigate({
+      to: "/productos",
+      search: nextQuery ? { ...search, q: nextQuery } : search,
+    });
+  };
+
+  const handleNav = (label: string) => {
+    goToCollection(navCategoryMap[label] ?? "Todos");
   };
 
   return (
@@ -86,14 +99,11 @@ export function SiteHeader() {
             value={query}
             aria-label="Buscar productos"
             placeholder="Buscar productos…"
-            onChange={(e) => {
-              setQuery(e.target.value);
-              if (e.target.value.trim()) scrollToProducts();
-            }}
+            onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 track("search", { query });
-                scrollToProducts();
+                goToCollection(category || "Todos", query.trim());
               }
             }}
             className="ui-text min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted-foreground"
@@ -107,7 +117,7 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => {
-              scrollToProducts();
+              goToCollection("Todos");
               track("favorites_view");
             }}
             className="flex items-center gap-2 text-[13px] text-ink"
@@ -146,7 +156,7 @@ export function SiteHeader() {
               type="button"
               onClick={() => handleNav(link)}
               className={`border-b-2 pb-1 text-[13.5px] uppercase tracking-[0.1em] transition-colors ${
-                category === navCategoryMap[link]
+                (link === "Productos" && category === "Todos") || category === navCategoryMap[link]
                   ? "border-primary text-ink"
                   : "border-transparent text-foreground hover:border-gold hover:text-ink"
               }`}
@@ -159,23 +169,12 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => {
-              setCategory("Todos");
               track("novedades_view");
-              scrollToProducts();
+              goToCollection("Todos");
             }}
             className="hover:text-ink"
           >
             Novedades
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              track("regalos_view");
-              scrollToProducts();
-            }}
-            className="hover:text-ink"
-          >
-            Regalos
           </button>
           <AccountLink className="text-ink hover:text-primary" />
         </div>

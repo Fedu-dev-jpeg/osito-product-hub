@@ -6,6 +6,7 @@ import p5 from "@/assets/p5.jpg";
 
 export type Product = {
   id: string;
+  slug: string;
   category: string;
   subcategory?: string;
   name: string;
@@ -13,11 +14,15 @@ export type Product = {
   price: number;
   image: string;
   badge?: string;
+  sku?: string;
+  compareAtPrice?: number;
+  inventory?: number;
 };
 
 export const products: Product[] = [
   {
     id: "lectura-lenta",
+    slug: "lectura-lenta",
     category: "Libros",
     subcategory: "Ensayo",
     name: "El arte de la lectura lenta",
@@ -28,6 +33,7 @@ export const products: Product[] = [
   },
   {
     id: "cuaderno-callao-a5",
+    slug: "cuaderno-callao-a5",
     category: "Papelería",
     subcategory: "Cuadernos",
     name: "Cuaderno Callao A5",
@@ -37,6 +43,7 @@ export const products: Product[] = [
   },
   {
     id: "pluma-recoleta-f",
+    slug: "pluma-recoleta-f",
     category: "Escritura",
     subcategory: "Plumas",
     name: "Pluma fuente Recoleta F",
@@ -47,6 +54,7 @@ export const products: Product[] = [
   },
   {
     id: "resaltadores-tierra",
+    slug: "resaltadores-tierra",
     category: "Escolar",
     subcategory: "Marcadores",
     name: "Resaltadores tono tierra ×6",
@@ -56,6 +64,7 @@ export const products: Product[] = [
   },
   {
     id: "agenda-semanal-2026",
+    slug: "agenda-semanal-2026",
     category: "Agendas",
     subcategory: "2026",
     name: "Agenda semanal 2026",
@@ -73,7 +82,7 @@ export const money = new Intl.NumberFormat("es-AR", {
 
 export const formatARS = (value: number) => money.format(value);
 
-export const navLinks = ["Librería", "Escolar", "Oficina", "Papelería", "Agendas"];
+export const navLinks = ["Productos", "Librería", "Escolar", "Oficina", "Papelería", "Agendas"];
 
 export const pageShell = "mx-auto w-full max-w-[1280px] px-4 sm:px-6 md:px-8";
 

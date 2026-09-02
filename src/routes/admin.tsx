@@ -1,10 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductManager } from "@/components/callao/ProductManager";
 import { RequireAuth } from "@/components/callao/RequireAuth";
 import { pageShell } from "@/components/callao/data";
 import { useAuth } from "@/lib/auth";
 import { getSettings, saveSettings, useShop, type Settings } from "@/lib/shop-store";
+import {
+  fetchOrders,
+  orderStatusLabel,
+  setOrderStatus,
+  type OrderRow,
+  type OrderStatus,
+} from "@/lib/orders";
+import { toast } from "sonner";
+import { formatARS } from "@/components/callao/data";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -59,10 +68,10 @@ function AdminDashboard() {
               Panel vendedor
             </Link>
             <Link
-              to="/"
+              to="/productos"
               className="ui-text rounded-sm border border-primary px-4 py-2.5 text-[13px] text-primary"
             >
-              Ver tienda
+              Ver catálogo
             </Link>
             <button
               type="button"
@@ -81,6 +90,8 @@ function AdminDashboard() {
         ) : null}
 
         <ProductManager canPublish />
+
+        <AdminOrders />
 
         <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
           <section className="rounded-md border border-rule bg-card p-5 md:p-6">
@@ -162,5 +173,63 @@ function AdminDashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+function AdminOrders() {
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+
+  const load = async () => {
+    setOrders(await fetchOrders());
+  };
+
+  useEffect(() => {
+    void load().catch((err: unknown) =>
+      toast.error(err instanceof Error ? err.message : "No se pudieron cargar los pedidos."),
+    );
+  }, []);
+
+  return (
+    <section className="mt-5 rounded-md border border-rule bg-card p-5 md:p-6">
+      <h2 className="mb-4 font-display text-2xl font-semibold text-ink">
+        Pedidos ({orders.length})
+      </h2>
+      {orders.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Todavía no hay pedidos de clientes.</p>
+      ) : (
+        <ul className="divide-y divide-rule">
+          {orders.map((order) => (
+            <li key={order.id} className="flex flex-wrap items-center gap-3 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-lg text-ink">{order.code}</p>
+                <p className="ui-text text-[12px] text-muted-foreground">
+                  {new Date(order.created_at).toLocaleString("es-AR")} · {formatARS(order.total)} ·{" "}
+                  {order.fulfillment === "envio" ? "Envío" : "Retiro"}
+                </p>
+              </div>
+              <select
+                value={order.status}
+                onChange={(e) => {
+                  const status = e.target.value as OrderStatus;
+                  void setOrderStatus(order.id, status)
+                    .then(() => load())
+                    .then(() => toast.success("Estado actualizado."))
+                    .catch((err: unknown) =>
+                      toast.error(err instanceof Error ? err.message : "No se pudo actualizar."),
+                    );
+                }}
+                className="h-9 rounded-sm border border-ink/20 px-2 text-sm"
+              >
+                {Object.entries(orderStatusLabel).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

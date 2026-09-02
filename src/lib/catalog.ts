@@ -16,6 +16,9 @@ export type ProductRow = {
   owner_id: string;
   created_at: string;
   updated_at: string;
+  sku: string | null;
+  compare_at_price: number | null;
+  inventory_qty: number;
 };
 
 export type ProductInput = {
@@ -28,11 +31,15 @@ export type ProductInput = {
   image_url?: string;
   badge?: string;
   published?: boolean;
+  sku?: string;
+  compare_at_price?: number;
+  inventory_qty?: number;
 };
 
 export function rowToProduct(row: ProductRow): Product {
   const product: Product = {
     id: row.id,
+    slug: row.slug,
     category: row.category,
     name: row.name,
     description: row.description,
@@ -43,6 +50,9 @@ export function rowToProduct(row: ProductRow): Product {
     ...product,
     ...(row.subcategory ? { subcategory: row.subcategory } : {}),
     ...(row.badge ? { badge: row.badge } : {}),
+    ...(row.sku ? { sku: row.sku } : {}),
+    ...(row.compare_at_price ? { compareAtPrice: row.compare_at_price } : {}),
+    ...(typeof row.inventory_qty === "number" ? { inventory: row.inventory_qty } : {}),
   };
 }
 
@@ -62,6 +72,17 @@ export async function fetchManagedProducts(ownerId?: string): Promise<ProductRow
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as ProductRow[];
+}
+
+export async function fetchProductBySlug(slug: string): Promise<Product | null> {
+  const { data, error } = await getSupabase()
+    .from("products")
+    .select("*")
+    .eq("slug", slug)
+    .eq("published", true)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? rowToProduct(data as ProductRow) : null;
 }
 
 export async function uploadProductImage(file: File, ownerId: string): Promise<string> {
@@ -94,6 +115,10 @@ export async function saveCatalogProduct(
     badge: input.badge?.trim() || null,
     published: Boolean(input.published),
     owner_id: ownerId,
+    sku: input.sku?.trim() || null,
+    compare_at_price:
+      input.compare_at_price && input.compare_at_price > 0 ? input.compare_at_price : null,
+    inventory_qty: Number.isFinite(input.inventory_qty) ? Number(input.inventory_qty) : 0,
   };
 
   if (input.id) {
@@ -108,6 +133,9 @@ export async function saveCatalogProduct(
         image_url: payload.image_url,
         badge: payload.badge,
         published: payload.published,
+        sku: payload.sku,
+        compare_at_price: payload.compare_at_price,
+        inventory_qty: payload.inventory_qty,
       })
       .eq("id", input.id)
       .select("*")
@@ -129,6 +157,9 @@ export async function saveCatalogProduct(
       badge: payload.badge,
       published: payload.published,
       owner_id: payload.owner_id,
+      sku: payload.sku,
+      compare_at_price: payload.compare_at_price,
+      inventory_qty: payload.inventory_qty,
     })
     .select("*")
     .single();

@@ -20,6 +20,9 @@ const emptyForm = {
   subcategory: "",
   description: "",
   price: "",
+  compare: "",
+  sku: "",
+  inventory: "20",
   badge: "",
 };
 
@@ -78,6 +81,9 @@ export function ProductManager({ canPublish }: { canPublish: boolean }) {
           price: Number(form.price) || 0,
           image_url: imageUrl || existing?.image_url || "",
           badge: form.badge,
+          sku: form.sku,
+          compare_at_price: Number(form.compare) || 0,
+          inventory_qty: Number(form.inventory) || 0,
           published: canPublish ? (editing ? Boolean(existing?.published) : publishNow) : false,
         },
         existing?.owner_id ?? user.id,
@@ -164,14 +170,44 @@ export function ProductManager({ canPublish }: { canPublish: boolean }) {
               />
             </label>
             <label className="ui-text flex flex-col gap-1.5 text-[13px]">
-              Badge
+              Precio anterior
               <input
-                value={form.badge}
-                onChange={(e) => setForm({ ...form, badge: e.target.value })}
+                type="number"
+                min="0"
+                value={form.compare}
+                onChange={(e) => setForm({ ...form, compare: e.target.value })}
                 className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
               />
             </label>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="ui-text flex flex-col gap-1.5 text-[13px]">
+              SKU
+              <input
+                value={form.sku}
+                onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
+              />
+            </label>
+            <label className="ui-text flex flex-col gap-1.5 text-[13px]">
+              Inventario
+              <input
+                type="number"
+                min="0"
+                value={form.inventory}
+                onChange={(e) => setForm({ ...form, inventory: e.target.value })}
+                className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
+              />
+            </label>
+          </div>
+          <label className="ui-text flex flex-col gap-1.5 text-[13px]">
+            Badge
+            <input
+              value={form.badge}
+              onChange={(e) => setForm({ ...form, badge: e.target.value })}
+              className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
+            />
+          </label>
           <label className="ui-text flex flex-col gap-1.5 text-[13px]">
             Imagen
             <input
@@ -239,7 +275,8 @@ export function ProductManager({ canPublish }: { canPublish: boolean }) {
                 <p className="ui-text text-[12px] text-muted-foreground">
                   {row.category}
                   {row.subcategory ? ` · ${row.subcategory}` : ""} · {formatARS(row.price)} ·{" "}
-                  {row.published ? "publicado" : "pendiente"}
+                  {row.sku ? `${row.sku} · ` : ""}
+                  stock {row.inventory_qty ?? 0} · {row.published ? "activo" : "borrador"}
                 </p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
@@ -276,6 +313,9 @@ export function ProductManager({ canPublish }: { canPublish: boolean }) {
                       subcategory: row.subcategory ?? "",
                       description: row.description,
                       price: String(row.price),
+                      compare: row.compare_at_price ? String(row.compare_at_price) : "",
+                      sku: row.sku ?? "",
+                      inventory: String(row.inventory_qty ?? 0),
                       badge: row.badge ?? "",
                     });
                     setImageUrl(row.image_url);
