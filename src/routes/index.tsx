@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { ArrowRight, ShieldCheck, Store, Truck } from "lucide-react";
 import heroImg from "@/assets/hero.jpg";
 import tiendaImg from "@/assets/tienda.jpg";
 import { SiteHeader } from "@/components/callao/SiteHeader";
 import { ProductCard } from "@/components/callao/ProductCard";
-import { products } from "@/components/callao/data";
+import { setCategory, track, useShop } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -45,6 +46,16 @@ const beneficios = [
 ];
 
 function Index() {
+  const { products, query, category } = useShop();
+  const categories = ["Todos", ...Array.from(new Set(products.map((p) => p.category)))];
+  const normalizedQuery = query.trim().toLowerCase();
+  const filtered = products.filter((product) => {
+    const matchesCategory = category === "Todos" || product.category === category;
+    const haystack =
+      `${product.name} ${product.category} ${product.subcategory ?? ""} ${product.description}`.toLowerCase();
+    return matchesCategory && (!normalizedQuery || haystack.includes(normalizedQuery));
+  });
+
   return (
     <div className="grain relative min-h-screen bg-background text-foreground">
       <div className="ui-text flex flex-wrap items-center justify-center gap-x-7 gap-y-1 bg-ink px-5 py-2.5 text-center text-[11.5px] uppercase tracking-[0.06em] text-parchment md:text-[12.5px]">
@@ -142,19 +153,34 @@ function Index() {
               </h2>
             </div>
             <div className="ui-text flex flex-wrap items-center gap-x-6 gap-y-2 text-[12.5px] uppercase tracking-[0.06em] md:pb-1.5">
-              <span className="border-b border-primary pb-0.5 text-ink">Todos</span>
-              <span className="text-muted-foreground">Libros</span>
-              <span className="text-muted-foreground">Papelería</span>
-              <span className="text-muted-foreground">Escritura</span>
-              <a href="#" className="text-primary">Ver todo (248)</a>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(cat)}
+                  className={
+                    category === cat
+                      ? "border-b border-primary pb-0.5 text-ink"
+                      : "text-muted-foreground transition-colors hover:text-ink"
+                  }
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 xl:gap-7">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {filtered.length > 0 ? (
+            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 xl:gap-7">
+              {filtered.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-8 rounded-md border border-rule bg-card px-6 py-7 text-sm text-muted-foreground">
+              No encontramos productos para esa búsqueda.
+            </p>
+          )}
         </div>
       </section>
 
@@ -216,27 +242,59 @@ function Index() {
               papelería. Sin spam.
             </p>
           </div>
-          <form
-            className="flex flex-col gap-3 sm:flex-row sm:items-center"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input
-              type="email"
-              placeholder="tu@correo.com.ar"
-              aria-label="Tu correo electrónico"
-              className="ui-text h-[46px] w-full rounded-sm border border-ink/25 bg-card px-3.5 text-sm text-ink outline-none placeholder:text-muted-foreground focus:border-gold sm:w-[320px]"
-            />
-            <button
-              type="submit"
-              className="ui-text inline-flex h-[46px] items-center justify-center rounded-sm bg-primary px-6 text-[13.5px] uppercase tracking-[0.08em] text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Suscribirme
-            </button>
-          </form>
+          <NewsletterForm />
         </div>
       </section>
 
       <SiteFooter />
+    </div>
+  );
+}
+
+function NewsletterForm() {
+  const [email, setEmail] = useState("");
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setFeedback({ ok: false, text: "Ingresá un email válido para suscribirte." });
+      return;
+    }
+    track("newsletter_signup", { emailDomain: email.split("@")[1] });
+    setFeedback({
+      ok: true,
+      text: "Gracias por suscribirte. Te vamos a escribir con novedades de la librería.",
+    });
+    setEmail("");
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <form className="flex flex-col gap-3 sm:flex-row sm:items-center" onSubmit={handleSubmit}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="tu@correo.com.ar"
+          aria-label="Tu correo electrónico"
+          className="ui-text h-[46px] w-full rounded-sm border border-ink/25 bg-card px-3.5 text-sm text-ink outline-none placeholder:text-muted-foreground focus:border-gold sm:w-[320px]"
+        />
+        <button
+          type="submit"
+          className="ui-text inline-flex h-[46px] items-center justify-center rounded-sm bg-primary px-6 text-[13.5px] uppercase tracking-[0.08em] text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          Suscribirme
+        </button>
+      </form>
+      {feedback && (
+        <p
+          role="status"
+          className={`ui-text text-[12.5px] ${feedback.ok ? "text-gold" : "text-primary"}`}
+        >
+          {feedback.text}
+        </p>
+      )}
     </div>
   );
 }
