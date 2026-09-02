@@ -8,7 +8,12 @@ import {
   type ReactNode,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { getSupabase, loginIdentifierToEmail } from "@/lib/supabase";
+import {
+  getSupabase,
+  loginIdentifierToEmail,
+  SUPABASE_PUBLISHABLE_KEY,
+  SUPABASE_URL,
+} from "@/lib/supabase";
 
 export type UserRole = "admin" | "vendedor";
 
@@ -115,7 +120,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async () => {
     const redirectTo = `${window.location.origin}/auth`;
-    const { data, error } = await getSupabase().auth.signInWithOAuth({
+    const supabase = getSupabase();
+    const probe = await fetch(`${SUPABASE_URL}/auth/v1/authorize?provider=google`, {
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Accept: "application/json",
+      },
+      redirect: "manual",
+    });
+    if (probe.status >= 400) {
+      const body = (await probe.json().catch(() => null)) as { msg?: string } | null;
+      const msg = body?.msg ?? "";
+      if (/not enabled|Unsupported provider/i.test(msg)) {
+        return "Google todavía no está habilitado. Entrá con usuario admin y la contraseña.";
+      }
+      return msg || "No se pudo continuar con Google.";
+    }
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo,
@@ -123,7 +145,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         queryParams: { access_type: "offline", prompt: "consent" },
       },
     });
-    if (error) return error.message;
+    if (error) {
+      return /provider is not enabled|Unsupported provider/i.test(error.message)
+        ? "Google todavía no está habilitado. Entrá con usuario admin y la contraseña."
+        : error.message;
+    }
     if (data.url) window.location.assign(data.url);
     return null;
   }, []);
