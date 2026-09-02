@@ -16,6 +16,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CuentaRouteImport } from './routes/cuenta'
 import { Route as ProductosRouteImport } from './routes/productos'
 import { Route as VendedorRouteImport } from './routes/vendedor'
+import { Route as ProductosIndexRouteImport } from './routes/productos.index'
 import { Route as ProductosSlugRouteImport } from './routes/productos.$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +54,11 @@ const VendedorRoute = VendedorRouteImport.update({
   path: '/vendedor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProductosIndexRoute = ProductosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProductosRoute,
+} as any)
 const ProductosSlugRoute = ProductosSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/productos': typeof ProductosRouteWithChildren
   '/vendedor': typeof VendedorRoute
   '/productos/$slug': typeof ProductosSlugRoute
+  '/productos/': typeof ProductosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,9 +82,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/checkout': typeof CheckoutRoute
   '/cuenta': typeof CuentaRoute
-  '/productos': typeof ProductosRouteWithChildren
   '/vendedor': typeof VendedorRoute
   '/productos/$slug': typeof ProductosSlugRoute
+  '/productos': typeof ProductosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +96,7 @@ export interface FileRoutesById {
   '/productos': typeof ProductosRouteWithChildren
   '/vendedor': typeof VendedorRoute
   '/productos/$slug': typeof ProductosSlugRoute
+  '/productos/': typeof ProductosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +109,7 @@ export interface FileRouteTypes {
     | '/productos'
     | '/vendedor'
     | '/productos/$slug'
+    | '/productos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -108,9 +117,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/checkout'
     | '/cuenta'
-    | '/productos'
     | '/vendedor'
     | '/productos/$slug'
+    | '/productos'
   id:
     | '__root__'
     | '/'
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/productos'
     | '/vendedor'
     | '/productos/$slug'
+    | '/productos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +194,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendedorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/productos/': {
+      id: '/productos/'
+      path: '/'
+      fullPath: '/productos/'
+      preLoaderRoute: typeof ProductosIndexRouteImport
+      parentRoute: typeof ProductosRoute
+    }
     '/productos/$slug': {
       id: '/productos/$slug'
       path: '/$slug'
@@ -196,10 +213,12 @@ declare module '@tanstack/react-router' {
 
 interface ProductosRouteChildren {
   ProductosSlugRoute: typeof ProductosSlugRoute
+  ProductosIndexRoute: typeof ProductosIndexRoute
 }
 
 const ProductosRouteChildren: ProductosRouteChildren = {
   ProductosSlugRoute: ProductosSlugRoute,
+  ProductosIndexRoute: ProductosIndexRoute,
 }
 
 const ProductosRouteWithChildren = ProductosRoute._addFileChildren(
