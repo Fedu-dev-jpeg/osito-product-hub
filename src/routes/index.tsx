@@ -251,6 +251,54 @@ function Index() {
   );
 }
 
+function NewsletterForm() {
+  const [email, setEmail] = useState("");
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setFeedback({ ok: false, text: "Ingresá un email válido para suscribirte." });
+      return;
+    }
+    track("newsletter_signup", { emailDomain: email.split("@")[1] });
+    setFeedback({
+      ok: true,
+      text: "Gracias por suscribirte. Te vamos a escribir con novedades de la librería.",
+    });
+    setEmail("");
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <form className="flex flex-col gap-3 sm:flex-row sm:items-center" onSubmit={handleSubmit}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="tu@correo.com.ar"
+          aria-label="Tu correo electrónico"
+          className="ui-text h-[46px] w-full rounded-sm border border-ink/25 bg-card px-3.5 text-sm text-ink outline-none placeholder:text-muted-foreground focus:border-gold sm:w-[320px]"
+        />
+        <button
+          type="submit"
+          className="ui-text inline-flex h-[46px] items-center justify-center rounded-sm bg-primary px-6 text-[13.5px] uppercase tracking-[0.08em] text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          Suscribirme
+        </button>
+      </form>
+      {feedback && (
+        <p
+          role="status"
+          className={`ui-text text-[12.5px] ${feedback.ok ? "text-gold" : "text-primary"}`}
+        >
+          {feedback.text}
+        </p>
+      )}
+    </div>
+  );
+}
+
 const footerCols = [
   { title: "Comprar", links: ["Librería", "Escolar", "Oficina", "Papelería", "Agendas"] },
   {
