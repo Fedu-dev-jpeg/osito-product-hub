@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Heart, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { formatARS, navLinks, pageShell } from "./data";
+import { useAuth } from "@/lib/auth";
 import { setCategory, setQuery, track, useShop } from "@/lib/shop-store";
 import { CartSheet } from "./CartSheet";
 
@@ -15,6 +16,29 @@ const navCategoryMap: Record<string, string> = {
 
 function scrollToProducts() {
   document.getElementById("destacados")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function AccountLink({ className, onClick }: { className?: string; onClick?: () => void }) {
+  const { session, profile } = useAuth();
+  if (!session || !profile) {
+    return (
+      <Link to="/auth" onClick={onClick} className={className}>
+        Mi cuenta
+      </Link>
+    );
+  }
+  if (profile.role === "admin") {
+    return (
+      <Link to="/admin" onClick={onClick} className={className}>
+        Admin
+      </Link>
+    );
+  }
+  return (
+    <Link to="/vendedor" onClick={onClick} className={className}>
+      Vendedor
+    </Link>
+  );
 }
 
 export function SiteHeader() {
@@ -153,9 +177,7 @@ export function SiteHeader() {
           >
             Regalos
           </button>
-          <Link to="/admin" className="text-ink hover:text-primary">
-            Mi cuenta
-          </Link>
+          <AccountLink className="text-ink hover:text-primary" />
         </div>
       </nav>
 
@@ -171,13 +193,10 @@ export function SiteHeader() {
               {link}
             </button>
           ))}
-          <Link
-            to="/admin"
+          <AccountLink
             onClick={() => setOpen(false)}
             className="border-b border-rule py-2.5 text-[13.5px] uppercase tracking-[0.1em] text-ink"
-          >
-            Mi cuenta
-          </Link>
+          />
           <div className="mt-2 flex flex-wrap items-center gap-5 text-[13px] text-ink">
             <span className="flex items-center gap-2">
               <Heart size={17} strokeWidth={1.5} /> Favoritos ({favorites.length})

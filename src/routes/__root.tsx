@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AnalyticsScripts } from "@/components/callao/AnalyticsScripts";
 import { ClickTracker } from "@/components/callao/ClickTracker";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/lib/auth";
 
 function NotFoundComponent() {
   return (
@@ -124,10 +125,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster />
-      <AnalyticsScripts />
-      <ClickTracker />
+      <AuthProvider>
+        <Outlet />
+        <Toaster />
+        <AnalyticsScripts />
+        <ClickTracker />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { products as defaultProducts, type Product } from "@/components/callao/data";
+import { fetchPublishedProducts } from "@/lib/catalog";
 
 export const PRODUCT_KEY = "libreria_callao_products";
 export const SETTINGS_KEY = "libreria_callao_settings";
@@ -78,6 +79,7 @@ function hydrate() {
     favorites: read<string[]>(FAVORITES_KEY, []),
     stats: read<Stats>(STATS_KEY, {}),
   };
+  void refreshCatalog();
 }
 
 function emit() {
@@ -137,6 +139,15 @@ export function setProducts(products: Product[]) {
   hydrate();
   write(PRODUCT_KEY, products);
   setState({ products });
+}
+
+export async function refreshCatalog() {
+  try {
+    const products = await fetchPublishedProducts();
+    if (products.length) setProducts(products);
+  } catch {
+    // Keep the last known catalog if the backend is unreachable.
+  }
 }
 
 export function saveProduct(product: Product) {
