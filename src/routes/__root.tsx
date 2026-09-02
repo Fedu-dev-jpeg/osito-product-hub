@@ -11,7 +11,6 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { CallaoProvider } from "@/components/callao/callao-store";
 import { AnalyticsScripts } from "@/components/callao/AnalyticsScripts";
 import { ClickTracker } from "@/components/callao/ClickTracker";
 import { Toaster } from "@/components/ui/sonner";
@@ -125,12 +124,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CallaoProvider>
-        <Outlet />
-        <Toaster />
-        <AnalyticsScripts />
-        <ClickTracker />
-      </CallaoProvider>
+      <Outlet />
+      <Toaster />
+      <AnalyticsScripts />
+      <ClickTracker />
     </QueryClientProvider>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useCallao } from "./callao-store";
+import { track } from "@/lib/shop-store";
 
 function clickLabel(target: EventTarget | null): string | null {
   if (!(target instanceof Element)) return null;
@@ -15,16 +15,14 @@ function clickLabel(target: EventTarget | null): string | null {
 }
 
 export function ClickTracker() {
-  const { trackClick } = useCallao();
-
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       const label = clickLabel(event.target);
-      if (label) trackClick(label);
+      if (label) track("click", { label });
     };
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
-  }, [trackClick]);
+  }, []);
 
   return null;
 }
