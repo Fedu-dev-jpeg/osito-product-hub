@@ -143,19 +143,34 @@ function Index() {
               </h2>
             </div>
             <div className="ui-text flex flex-wrap items-center gap-x-6 gap-y-2 text-[12.5px] uppercase tracking-[0.06em] md:pb-1.5">
-              <span className="border-b border-primary pb-0.5 text-ink">Todos</span>
-              <span className="text-muted-foreground">Libros</span>
-              <span className="text-muted-foreground">Papelería</span>
-              <span className="text-muted-foreground">Escritura</span>
-              <a href="#" className="text-primary">Ver todo (248)</a>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(cat)}
+                  className={
+                    category === cat
+                      ? "border-b border-primary pb-0.5 text-ink"
+                      : "text-muted-foreground transition-colors hover:text-ink"
+                  }
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 xl:gap-7">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {filtered.length > 0 ? (
+            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 xl:gap-7">
+              {filtered.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-8 rounded-md border border-rule bg-card px-6 py-7 text-sm text-muted-foreground">
+              No encontramos productos para esa búsqueda.
+            </p>
+          )}
         </div>
       </section>
 
