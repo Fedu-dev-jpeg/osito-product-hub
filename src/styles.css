@@ -59,29 +59,51 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-ink: var(--ink);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-cream: var(--cream);
+  --color-parchment: var(--parchment);
+  --color-sepia: var(--sepia);
+  --color-rule: var(--rule);
+  --font-display: var(--font-display-family);
+  --font-sans: var(--font-sans-family);
+  --font-serif: var(--font-serif-family);
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --radius: 0.1875rem;
+  --font-display-family: "Cormorant Garamond", Garamond, serif;
+  --font-serif-family: "Lora", Georgia, serif;
+  --font-sans-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* Librería Callao */
+  --ink: oklch(0.290 0.054 261.5);
+  --gold: oklch(0.644 0.112 73.8);
+  --gold-soft: oklch(0.781 0.108 73.7);
+  --cream: oklch(0.994 0.008 91.5);
+  --parchment: oklch(0.941 0.020 87.5);
+  --sepia: oklch(0.517 0.041 61.3);
+  --rule: oklch(0.290 0.054 261.5 / 13%);
+  --background: oklch(0.965 0.014 88.7);
+  --foreground: oklch(0.245 0.008 75);
+  --card: oklch(0.994 0.008 91.5);
+  --card-foreground: oklch(0.290 0.054 261.5);
+  --popover: oklch(0.994 0.008 91.5);
+  --popover-foreground: oklch(0.290 0.054 261.5);
+  --primary: oklch(0.362 0.109 14.7);
+  --primary-foreground: oklch(0.965 0.014 88.7);
+  --secondary: oklch(0.941 0.020 87.5);
+  --secondary-foreground: oklch(0.290 0.054 261.5);
+  --muted: oklch(0.941 0.020 87.5);
+  --muted-foreground: oklch(0.459 0.014 79.7);
+  --accent: oklch(0.644 0.112 73.8);
+  --accent-foreground: oklch(0.965 0.014 88.7);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --border: oklch(0.881 0.020 84.6);
+  --input: oklch(0.881 0.020 84.6);
+  --ring: oklch(0.644 0.112 73.8);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -140,5 +162,43 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-serif-family);
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display-family);
+  }
+}
+
+@utility eyebrow {
+  font-family: var(--font-sans-family);
+  font-size: 0.65rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+@utility ui-text {
+  font-family: var(--font-sans-family);
+}
+
+@utility plate {
+  border: 6px solid var(--parchment);
+  outline: 1px solid var(--rule);
+  filter: sepia(0.18) saturate(0.86) contrast(1.04);
+  box-sizing: border-box;
+}
+
+@layer base {
+  .grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0.055;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 width=%27180%27 height=%27180%27><filter id=%27n%27><feTurbulence type=%27fractalNoise%27 baseFrequency=%270.85%27 numOctaves=%273%27 stitchTiles=%27stitch%27/></filter><rect width=%27180%27 height=%27180%27 filter=%27url(%23n)%27/></svg>");
+    background-size: 180px 180px;
   }
 }
