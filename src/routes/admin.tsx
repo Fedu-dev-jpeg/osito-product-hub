@@ -62,11 +62,11 @@ function AdminPage() {
       id,
       name: form.name.trim(),
       category: form.category,
-      subcategory: form.subcategory.trim() || undefined,
       description: form.description.trim(),
       price: Number(form.price) || 0,
-      badge: form.badge.trim() || undefined,
       image: imageData || existing?.image || "",
+      ...(form.subcategory.trim() ? { subcategory: form.subcategory.trim() } : {}),
+      ...(form.badge.trim() ? { badge: form.badge.trim() } : {}),
     };
     saveProduct(product);
     setForm(emptyForm);
