@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { Breadcrumbs } from "@/components/callao/Breadcrumbs";
 import { SiteFooter } from "@/components/callao/SiteFooter";
 import { SiteHeader } from "@/components/callao/SiteHeader";
 import { MobileStickyCta, WhatsAppFloat } from "@/components/callao/WhatsAppFloat";
@@ -57,31 +58,37 @@ function ProductDetailPage() {
     <div className="grain min-h-screen bg-background text-foreground">
       <SiteHeader />
       <div className={`${pageShell} py-8 md:py-12`}>
-        <nav className="ui-text text-[12px] text-sepia">
-          <Link to="/" className="hover:text-ink">
-            Inicio
-          </Link>
-          <span className="px-2">/</span>
-          <Link to="/productos" className="hover:text-ink">
-            Productos
-          </Link>
-          <span className="px-2">/</span>
-          <span className="text-ink">{product.name}</span>
-        </nav>
+        <Breadcrumbs
+          items={[
+            { label: "Inicio", to: "/" },
+            { label: "Productos", to: "/productos" },
+            { label: product.category, to: "/productos", search: { categoria: product.category } },
+            ...(product.subcategory
+              ? [
+                  {
+                    label: product.subcategory,
+                    to: "/productos",
+                    search: { categoria: product.category, sub: product.subcategory },
+                  },
+                ]
+              : []),
+            { label: product.name },
+          ]}
+        />
 
         <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2">
           <div>
-            <div className="overflow-hidden rounded-md border border-rule bg-secondary">
+            <div className="aspect-square overflow-hidden rounded-md border border-rule bg-secondary">
               {images[active] ? (
                 <img
                   src={images[active]}
                   alt={product.name}
-                  className="w-full object-cover"
+                  className="h-full w-full object-cover object-center"
                   width={900}
                   height={900}
                 />
               ) : (
-                <div className="flex aspect-square items-center justify-center font-display text-4xl italic text-sepia">
+                <div className="flex h-full items-center justify-center px-6 text-center font-display text-3xl italic text-sepia">
                   {product.name}
                 </div>
               )}

@@ -29,7 +29,7 @@ export function SiteFooter() {
           {branches.map((branch) => (
             <a
               key={branch.id}
-              href={`/#${branch.id}`}
+              href={`/sucursales?local=${branch.id}#mapa`}
               className="text-[13px] text-foreground hover:text-primary"
             >
               {branch.address}
@@ -55,11 +55,9 @@ export function SiteFooter() {
               onClick={() => track("facebook_click", { source: "footer" })}
               className="text-[13px] text-foreground hover:text-primary"
             >
-              Facebook: Librería Callao
+              Facebook
             </a>
-          ) : (
-            <span className="text-[13px] text-foreground">Facebook: Librería Callao</span>
-          )}
+          ) : null}
           <a
             href={`mailto:${settings.email}`}
             className="text-[13px] text-foreground hover:text-primary"

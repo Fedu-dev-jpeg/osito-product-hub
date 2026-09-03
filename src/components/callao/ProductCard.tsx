@@ -14,7 +14,7 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <article className="flex min-w-0 flex-col overflow-hidden rounded-md border border-ink/15 bg-card transition-all hover:border-gold/75 hover:shadow-md">
-      <div className="relative aspect-square border-b border-ink/10 bg-secondary sm:aspect-[4/5] lg:aspect-square">
+      <div className="relative aspect-square overflow-hidden border-b border-ink/10 bg-secondary">
         <Link
           to="/productos/$slug"
           params={{ slug }}
@@ -28,11 +28,17 @@ export function ProductCard({ product }: { product: Product }) {
               loading="lazy"
               width={800}
               height={800}
-              className="h-full w-full object-cover"
+              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 280px"
+              className="h-full w-full object-cover object-center"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-secondary px-4">
-              <span className="text-center font-display text-2xl italic text-sepia">{product.name}</span>
+            <div className="flex h-full w-full flex-col items-center justify-center bg-secondary px-5 text-center">
+              <span className="ui-text text-[10px] uppercase tracking-[0.18em] text-gold">
+                {product.brand || product.category}
+              </span>
+              <span className="mt-2 font-display text-xl italic leading-tight text-sepia">
+                {product.name}
+              </span>
             </div>
           )}
         </Link>

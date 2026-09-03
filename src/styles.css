@@ -208,6 +208,25 @@
   box-sizing: border-box;
 }
 
+.hero-fade {
+  animation: hero-fade-in 800ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-fade {
+    animation: none;
+  }
+}
+
+@keyframes hero-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @layer base {
   .grain::before {
     content: "";

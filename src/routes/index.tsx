@@ -1,24 +1,23 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, MapPin, MessageCircle, Palette, Pencil, Store } from "lucide-react";
-import heroImg from "@/assets/hero-papeleria.webp";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { MapPin, Palette, Pencil, Store } from "lucide-react";
 import p2 from "@/assets/p2.jpg";
 import p3 from "@/assets/p3.jpg";
 import p4 from "@/assets/p4.jpg";
 import p5 from "@/assets/p5.jpg";
+import { HeroCarousel } from "@/components/callao/HeroCarousel";
 import { LocalBusinessJsonLd } from "@/components/callao/LocalBusinessJsonLd";
-import { ProductCard } from "@/components/callao/ProductCard";
+import { ProductCarousel } from "@/components/callao/ProductCarousel";
 import { SiteFooter } from "@/components/callao/SiteFooter";
 import { SiteHeader } from "@/components/callao/SiteHeader";
 import { MobileStickyCta, WhatsAppFloat } from "@/components/callao/WhatsAppFloat";
 import { pageShell } from "@/components/callao/data";
+import { locationDirectionsUrl } from "@/lib/locations";
+import { normalizeSearch } from "@/lib/search";
 import {
-  branches,
   catalogCategories,
   INSTAGRAM_HANDLE,
   INSTAGRAM_URL,
   knownBrands,
-  mapsDirectionsUrl,
-  mapsSearchUrl,
   seoKeywords,
   SITE_DESCRIPTION,
   SITE_TITLE,
@@ -53,12 +52,20 @@ const beneficios = [
 ];
 
 function Index() {
-  const navigate = useNavigate();
-  const { products, settings } = useShop();
-  const featured = products.filter((p) => p.featured).slice(0, 8);
-  const shown = featured.length ? featured : products.slice(0, 8);
+  const { products, settings, heroSlides, locations, catalogStatus } = useShop();
+  const featured = products
+    .filter((p) => p.featured)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  const newest = products.filter((p) => p.isNew);
+  const featuredIds = new Set(featured.map((p) => p.id));
+  const uniqueNew = newest.filter((p) => !featuredIds.has(p.id));
+  const showNovedades = newest.length >= 4 && uniqueNew.length >= 3;
+  const publishedBrands = knownBrands.filter((brand) =>
+    products.some((product) => normalizeSearch(product.brand ?? "") === normalizeSearch(brand)),
+  );
+  const branches = locations.filter((item) => item.active);
+  const reviewBranches = branches.filter((item) => item.reviewUrl);
   const waHome = whatsappUrl({ kind: "home" }, settings.whatsapp);
-  const waSchool = whatsappUrl({ kind: "school" }, settings.whatsapp);
 
   return (
     <div className="grain relative min-h-screen overflow-x-hidden bg-background text-foreground">
@@ -73,59 +80,7 @@ function Index() {
 
       <SiteHeader />
 
-      <section className="relative z-[2] border-b border-rule">
-        <div className={`${pageShell} grid grid-cols-1 lg:grid-cols-2`}>
-          <div className="flex min-w-0 flex-col justify-center py-12 sm:py-14 lg:border-r lg:border-rule lg:py-20 lg:pr-12">
-            <span className="eyebrow mb-5">{settings.heroEyebrow}</span>
-            <h1 className="mb-6 font-display text-[34px] font-normal leading-[1.04] tracking-[-0.015em] text-pretty text-ink sm:text-5xl lg:text-6xl">
-              {settings.heroTitle}
-            </h1>
-            <p className="mb-8 max-w-[42ch] text-base leading-[1.72] text-pretty text-foreground/80 md:text-[16.5px]">
-              {settings.heroDescription}
-            </p>
-            <div className="flex flex-wrap items-center gap-4">
-              <Link
-                to="/productos"
-                className="ui-text inline-flex min-h-12 items-center gap-2.5 rounded-sm bg-primary px-7 py-3.5 text-sm uppercase tracking-[0.08em] text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                Ver productos
-                <ArrowRight size={16} strokeWidth={1.7} />
-              </Link>
-              <a
-                href={waHome}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => track("click_whatsapp", { source: "hero" })}
-                className="ui-text inline-flex min-h-12 items-center gap-2 border-b border-ink/35 pb-0.5 text-sm text-ink transition-colors hover:border-gold hover:text-primary"
-              >
-                <MessageCircle size={16} />
-                Consultar por WhatsApp
-              </a>
-            </div>
-            <div className="ui-text mt-10 flex flex-wrap gap-6 border-t border-rule pt-6 text-[11.5px] tracking-[0.05em] text-sepia md:mt-12 md:gap-10">
-              <span>3 sucursales en Recoleta</span>
-              <span>Gran variedad de marcas</span>
-              <span>Atención personalizada</span>
-            </div>
-          </div>
-          <div className="flex min-w-0 items-center pb-12 lg:py-14 lg:pl-12">
-            <figure className="m-0 w-full">
-              <div className="plate-color aspect-[4/3] w-full rounded-[2px] lg:aspect-[5/4]">
-                <img
-                  src={heroImg}
-                  alt="Útiles escolares, marcadores, cuadernos y papelería sobre un escritorio"
-                  width={1400}
-                  height={933}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <figcaption className="ui-text mt-3 text-right text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-                Escolar · Oficina · Arte · Papelería
-              </figcaption>
-            </figure>
-          </div>
-        </div>
-      </section>
+      <HeroCarousel slides={heroSlides} />
 
       <section className="relative z-[2] border-b border-rule bg-secondary">
         <div className={`${pageShell} grid grid-cols-1 lg:grid-cols-3`}>
@@ -174,26 +129,87 @@ function Index() {
         </div>
       </section>
 
-      <section id="destacados" className="relative z-[2] scroll-mt-4 border-b border-rule py-16 md:py-20">
-        <div className={pageShell}>
-          <div className="flex flex-col gap-3 border-b border-ink/20 pb-5 md:flex-row md:items-end md:justify-between">
-            <div>
-              <span className="eyebrow mb-3 block">Catálogo</span>
-              <h2 className="font-display text-4xl font-normal leading-none tracking-[-0.01em] text-ink md:text-[44px]">
-                Productos
-              </h2>
-            </div>
-            <Link to="/productos" className="ui-text text-[12.5px] uppercase tracking-[0.06em] text-primary">
-              Ver todos
-            </Link>
-          </div>
-          {shown.length > 0 ? (
+      {catalogStatus === "loading" && !products.length ? (
+        <section className="relative z-[2] border-b border-rule py-16 md:py-20">
+          <div className={pageShell}>
+            <div className="h-8 w-48 animate-pulse rounded-sm bg-muted" />
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {shown.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {[1, 2, 3, 4].map((item) => (
+                <div key={item} className="aspect-square animate-pulse rounded-md bg-muted" />
               ))}
             </div>
-          ) : (
+          </div>
+        </section>
+      ) : null}
+
+      {catalogStatus === "error" && !products.length ? (
+        <section className="relative z-[2] border-b border-rule py-16">
+          <div className={pageShell}>
+            <p className="font-display text-2xl text-ink">No pudimos cargar el catálogo</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="ui-text mt-4 inline-flex min-h-11 items-center rounded-sm border border-ink/20 px-5 text-[13px] uppercase tracking-[0.08em]"
+            >
+              Reintentar
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {featured.length ? (
+        <section id="destacados" className="relative z-[2] scroll-mt-4 border-b border-rule py-16 md:py-20">
+          <div className={pageShell}>
+            <div className="flex flex-col gap-3 border-b border-ink/20 pb-5 md:flex-row md:items-end md:justify-between">
+              <div>
+                <span className="eyebrow mb-3 block">Catálogo</span>
+                <h2 className="font-display text-4xl font-normal leading-none tracking-[-0.01em] text-ink md:text-[44px]">
+                  Destacados
+                </h2>
+              </div>
+              <Link to="/productos" className="ui-text text-[12.5px] uppercase tracking-[0.06em] text-primary">
+                Ver todos
+              </Link>
+            </div>
+            <div className="mt-8">
+              <ProductCarousel products={featured} label="destacados" />
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {showNovedades ? (
+        <section className="relative z-[2] border-b border-rule py-16 md:py-20">
+          <div className={pageShell}>
+            <div className="flex flex-col gap-3 border-b border-ink/20 pb-5 md:flex-row md:items-end md:justify-between">
+              <div>
+                <span className="eyebrow mb-3 block">Catálogo</span>
+                <h2 className="font-display text-4xl font-normal leading-none tracking-[-0.01em] text-ink md:text-[44px]">
+                  Novedades
+                </h2>
+              </div>
+              <Link
+                to="/productos"
+                search={{ sort: "newest" }}
+                className="ui-text text-[12.5px] uppercase tracking-[0.06em] text-primary"
+              >
+                Ver todas
+              </Link>
+            </div>
+            <div className="mt-8">
+              <ProductCarousel products={newest} label="novedades" />
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {!products.length && catalogStatus === "ready" ? (
+        <section className="relative z-[2] border-b border-rule py-16 md:py-20">
+          <div className={pageShell}>
+            <span className="eyebrow mb-3 block">Catálogo</span>
+            <h2 className="font-display text-4xl font-normal leading-none tracking-[-0.01em] text-ink md:text-[44px]">
+              Productos
+            </h2>
             <div className="mt-8 rounded-md border border-rule bg-card px-6 py-10">
               <p className="font-display text-2xl text-ink">Estamos cargando el catálogo</p>
               <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
@@ -210,9 +226,9 @@ function Index() {
                 Consultar por WhatsApp
               </a>
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      ) : null}
 
       <section className="relative z-[2] border-b border-rule py-14 md:py-16">
         <div className={pageShell}>
@@ -223,31 +239,40 @@ function Index() {
           <p className="mb-8 max-w-[60ch] text-[14.5px] text-foreground/75">
             Trabajamos con marcas como estas. La disponibilidad puede variar según sucursal y temporada.
           </p>
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-rule bg-rule sm:grid-cols-4 lg:grid-cols-8">
-            {knownBrands.map((brand) => (
-              <button
-                key={brand}
-                type="button"
-                onClick={() => {
-                  setCategory("Todos");
-                  track("search", { query: brand, source: "brands" });
-                  void navigate({ to: "/productos", search: { q: brand } });
-                }}
-                className="flex min-h-[72px] items-center justify-center bg-card px-3 py-4 font-display text-lg text-ink hover:bg-secondary"
-              >
-                {brand}
-              </button>
-            ))}
-          </div>
+          {publishedBrands.length ? (
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-rule bg-rule sm:grid-cols-4 lg:grid-cols-8">
+              {publishedBrands.map((brand) => (
+                <Link
+                  key={brand}
+                  to="/productos"
+                  search={{ marca: brand }}
+                  onClick={() => track("select_category", { brand })}
+                  className="flex min-h-[72px] items-center justify-center bg-card px-3 py-4 font-display text-lg text-ink hover:bg-secondary"
+                >
+                  {brand}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Trabajamos con marcas como Sharpie, Stabilo, Giotto, HP y más. La disponibilidad se va a
+              ver en el catálogo a medida que publiquemos productos.
+            </p>
+          )}
         </div>
       </section>
 
       <section id="sucursales" className="relative z-[2] scroll-mt-6 border-b border-rule bg-secondary py-16 md:py-20">
         <div className={pageShell}>
           <span className="eyebrow mb-3 block">Recoleta · CABA</span>
-          <h2 className="mb-8 font-display text-4xl font-normal text-ink md:text-[44px]">
-            Encontranos en Recoleta
-          </h2>
+          <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <h2 className="font-display text-4xl font-normal text-ink md:text-[44px]">
+              Encontranos en Recoleta
+            </h2>
+            <Link to="/sucursales" className="ui-text text-[12.5px] uppercase tracking-[0.06em] text-primary">
+              Ver sucursales
+            </Link>
+          </div>
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             {branches.map((branch) => {
               const waBranch = whatsappUrl(
@@ -293,15 +318,24 @@ function Index() {
                     ) : null}
                   </ul>
                   <div className="mt-5 flex flex-col gap-2">
+                    <Link
+                      to="/sucursales"
+                      search={{ local: branch.id }}
+                      hash="mapa"
+                      onClick={() => track("select_store", { store: branch.address, source: "home-map" })}
+                      className="ui-text inline-flex min-h-11 items-center justify-center rounded-sm bg-primary px-4 text-[12px] uppercase tracking-[0.08em] text-primary-foreground"
+                    >
+                      Ver mapa
+                    </Link>
                     <a
-                      href={mapsDirectionsUrl(branch.mapsQuery)}
+                      href={locationDirectionsUrl(branch)}
                       target="_blank"
                       rel="noreferrer"
                       onClick={() => {
-                        track("click_maps", { store: branch.address });
+                        track("click_maps", { store: branch.address, source: "directions" });
                         track("select_store", { store: branch.address });
                       }}
-                      className="ui-text inline-flex min-h-11 items-center justify-center rounded-sm bg-primary px-4 text-[12px] uppercase tracking-[0.08em] text-primary-foreground"
+                      className="ui-text inline-flex min-h-11 items-center justify-center rounded-sm border border-ink/20 px-4 text-[12px] uppercase tracking-[0.08em] text-ink"
                     >
                       Cómo llegar
                     </a>
@@ -324,15 +358,14 @@ function Index() {
                           WhatsApp
                         </a>
                       ) : (
-                        <a
-                          href={mapsSearchUrl(branch.mapsQuery)}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={() => track("click_maps", { store: branch.address, source: "map" })}
+                        <Link
+                          to="/sucursales"
+                          search={{ local: branch.id }}
+                          hash="mapa"
                           className="ui-text inline-flex min-h-11 items-center justify-center rounded-sm border border-ink/20 px-3 text-[12px] uppercase tracking-[0.08em] text-ink"
                         >
-                          Ver mapa
-                        </a>
+                          Ver sucursal
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -419,14 +452,30 @@ function Index() {
             Variedad, amplio surtido, productos difíciles de conseguir y atención personalizada. Mirá las
             reseñas reales en Google.
           </p>
-          <a
-            href={settings.googleReviewsUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="ui-text inline-flex min-h-11 items-center rounded-sm border border-ink/25 px-5 text-[13px] uppercase tracking-[0.08em] text-ink hover:border-gold"
-          >
-            Ver reseñas en Google
-          </a>
+          {reviewBranches.length ? (
+            <div className="flex flex-wrap gap-2">
+              {reviewBranches.map((branch) => (
+                <a
+                  key={branch.id}
+                  href={branch.reviewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ui-text inline-flex min-h-11 items-center rounded-sm border border-ink/25 px-5 text-[13px] uppercase tracking-[0.08em] text-ink hover:border-gold"
+                >
+                  Reseñas {branch.name}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <a
+              href={settings.googleReviewsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="ui-text inline-flex min-h-11 items-center rounded-sm border border-ink/25 px-5 text-[13px] uppercase tracking-[0.08em] text-ink hover:border-gold"
+            >
+              Ver reseñas en Google
+            </a>
+          )}
         </div>
       </section>
 

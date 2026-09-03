@@ -16,6 +16,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CuentaRouteImport } from './routes/cuenta'
 import { Route as ListaEscolarRouteImport } from './routes/lista-escolar'
 import { Route as ProductosRouteImport } from './routes/productos'
+import { Route as SucursalesRouteImport } from './routes/sucursales'
 import { Route as VendedorRouteImport } from './routes/vendedor'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -57,6 +58,11 @@ const ProductosRoute = ProductosRouteImport.update({
   path: '/productos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SucursalesRoute = SucursalesRouteImport.update({
+  id: '/sucursales',
+  path: '/sucursales',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VendedorRoute = VendedorRouteImport.update({
   id: '/vendedor',
   path: '/vendedor',
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/cuenta': typeof CuentaRoute
   '/lista-escolar': typeof ListaEscolarRoute
   '/productos': typeof ProductosRouteWithChildren
+  '/sucursales': typeof SucursalesRoute
   '/vendedor': typeof VendedorRoute
   '/admin/login': typeof AdminLoginRoute
   '/productos/$slug': typeof ProductosSlugRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/cuenta': typeof CuentaRoute
   '/lista-escolar': typeof ListaEscolarRoute
+  '/sucursales': typeof SucursalesRoute
   '/vendedor': typeof VendedorRoute
   '/admin/login': typeof AdminLoginRoute
   '/productos/$slug': typeof ProductosSlugRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/cuenta': typeof CuentaRoute
   '/lista-escolar': typeof ListaEscolarRoute
   '/productos': typeof ProductosRouteWithChildren
+  '/sucursales': typeof SucursalesRoute
   '/vendedor': typeof VendedorRoute
   '/admin/login': typeof AdminLoginRoute
   '/productos/$slug': typeof ProductosSlugRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/cuenta'
     | '/lista-escolar'
     | '/productos'
+    | '/sucursales'
     | '/vendedor'
     | '/admin/login'
     | '/productos/$slug'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/cuenta'
     | '/lista-escolar'
+    | '/sucursales'
     | '/vendedor'
     | '/admin/login'
     | '/productos/$slug'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/cuenta'
     | '/lista-escolar'
     | '/productos'
+    | '/sucursales'
     | '/vendedor'
     | '/admin/login'
     | '/productos/$slug'
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   CuentaRoute: typeof CuentaRoute
   ListaEscolarRoute: typeof ListaEscolarRoute
   ProductosRoute: typeof ProductosRouteWithChildren
+  SucursalesRoute: typeof SucursalesRoute
   VendedorRoute: typeof VendedorRoute
 }
 
@@ -227,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/productos'
       fullPath: '/productos'
       preLoaderRoute: typeof ProductosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sucursales': {
+      id: '/sucursales'
+      path: '/sucursales'
+      fullPath: '/sucursales'
+      preLoaderRoute: typeof SucursalesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vendedor': {
@@ -301,6 +321,7 @@ const rootRouteChildren: RootRouteChildren = {
   CuentaRoute: CuentaRoute,
   ListaEscolarRoute: ListaEscolarRoute,
   ProductosRoute: ProductosRouteWithChildren,
+  SucursalesRoute: SucursalesRoute,
   VendedorRoute: VendedorRoute,
 }
 export const routeTree = rootRouteImport

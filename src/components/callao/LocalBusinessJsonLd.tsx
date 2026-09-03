@@ -2,9 +2,10 @@ import { branches, INSTAGRAM_URL, originUrl, SITE_LEGAL_NAME, SITE_NAME } from "
 import { useShop } from "@/lib/shop-store";
 
 export function LocalBusinessJsonLd() {
-  const { settings } = useShop();
+  const { settings, locations } = useShop();
   const origin = originUrl();
-  const graph = branches.map((branch) => ({
+  const list = locations.length ? locations.filter((item) => item.active) : branches;
+  const graph = list.map((branch) => ({
     "@type": "StationeryStore",
     "@id": origin ? `${origin}/#${branch.id}` : `#${branch.id}`,
     name: SITE_NAME,

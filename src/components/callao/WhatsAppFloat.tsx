@@ -62,7 +62,7 @@ export function MobileStickyCta() {
           Consultar por WhatsApp
         </a>
         <a
-          href="/#sucursales"
+          href="/sucursales"
           className="ui-text flex h-11 flex-1 items-center justify-center rounded-sm border border-ink/20 px-3 text-[12px] uppercase tracking-[0.08em] text-ink"
         >
           Ver sucursales
