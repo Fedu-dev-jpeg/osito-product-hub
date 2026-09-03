@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 import { products as defaultProducts, type Product } from "@/components/callao/data";
 import { fetchPublishedProducts } from "@/lib/catalog";
+import { fetchHeroSlides, type HeroSlide } from "@/lib/hero";
+import { fallbackLocations, fetchStoreLocations, type StoreLocation } from "@/lib/locations";
 import { sanitizeId, sanitizeText } from "@/lib/sanitize";
 import {
   DEFAULT_EMAIL,
@@ -28,6 +30,7 @@ const TRACKABLE = new Set([
   "instagram_click",
   "facebook_click",
   "search",
+  "search_no_results",
   "view_item",
   "select_category",
 ]);
@@ -57,14 +60,19 @@ export type Settings = {
   heroDescription: string;
 };
 
+export type CatalogStatus = "loading" | "ready" | "error";
+
 type ShopState = {
   products: Product[];
+  locations: StoreLocation[];
+  heroSlides: HeroSlide[];
   cart: CartItem[];
   favorites: string[];
   stats: Stats;
   query: string;
   category: string;
   settings: Settings;
+  catalogStatus: CatalogStatus;
 };
 
 export const defaultSettings: Settings = {
@@ -86,12 +94,15 @@ export const defaultSettings: Settings = {
 
 const initialState: ShopState = {
   products: defaultProducts,
+  locations: fallbackLocations(),
+  heroSlides: [],
   cart: [],
   favorites: [],
   stats: {},
   query: "",
   category: "Todos",
   settings: defaultSettings,
+  catalogStatus: "loading",
 };
 
 let state: ShopState = initialState;
@@ -144,16 +155,20 @@ function hydrate() {
   if (hydrated || typeof window === "undefined") return;
   hydrated = true;
   const storedProducts = read<Product[] | null>(PRODUCT_KEY, null);
+  const products = Array.isArray(storedProducts) ? storedProducts : [];
   state = {
     ...state,
-    products: Array.isArray(storedProducts) ? storedProducts : [],
+    products,
     cart: read<CartItem[]>(CART_KEY, []),
     favorites: read<string[]>(FAVORITES_KEY, []),
     stats: read<Stats>(STATS_KEY, {}),
     settings: cleanSettings(read<Partial<Settings>>(SETTINGS_KEY, {})),
+    catalogStatus: products.length ? "ready" : "loading",
   };
   void refreshCatalog();
   void refreshSettings();
+  void refreshLocations();
+  void refreshHero();
 }
 
 function emit() {
@@ -224,8 +239,27 @@ export async function refreshCatalog() {
   try {
     const products = await fetchPublishedProducts();
     setProducts(products);
+    setState({ catalogStatus: "ready" });
   } catch {
-    // Keep the last known catalog if the backend is unreachable.
+    setState({ catalogStatus: state.products.length ? "ready" : "error" });
+  }
+}
+
+export async function refreshLocations() {
+  try {
+    const locations = await fetchStoreLocations(false);
+    setState({ locations });
+  } catch {
+    if (!state.locations.length) setState({ locations: fallbackLocations() });
+  }
+}
+
+export async function refreshHero() {
+  try {
+    const heroSlides = await fetchHeroSlides(false);
+    setState({ heroSlides });
+  } catch {
+    // Keep fallback slides in the carousel.
   }
 }
 
@@ -340,4 +374,25 @@ export async function fetchEventCounts() {
     counts[name] = (counts[name] ?? 0) + 1;
   }
   return counts;
+}
+
+export async function fetchSearchNoResults(): Promise<{ query: string; count: number }[]> {
+  const { data, error } = await getSupabase()
+    .from("site_events")
+    .select("details")
+    .eq("event_name", "search_no_results");
+  if (error) throw error;
+  const counts = new Map<string, number>();
+  for (const row of data ?? []) {
+    const details = (row as { details?: { query?: unknown } }).details;
+    const query = String(details?.query ?? "")
+      .trim()
+      .toLowerCase();
+    if (!query) continue;
+    counts.set(query, (counts.get(query) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([query, count]) => ({ query, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 50);
 }

@@ -1,9 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { CatalogImport } from "@/components/callao/CatalogImport";
+import { HeroManager } from "@/components/callao/HeroManager";
+import { LocationManager } from "@/components/callao/LocationManager";
 import { ProductManager } from "@/components/callao/ProductManager";
 import { RequireAuth } from "@/components/callao/RequireAuth";
 import { formatARS, pageShell } from "@/components/callao/data";
 import { useAuth } from "@/lib/auth";
+import { fetchManagedProducts, type ProductRow } from "@/lib/catalog";
 import {
   fetchOrders,
   orderStatusLabel,
@@ -14,6 +18,7 @@ import {
 import { catalogCategories, knownBrands, siteServices } from "@/lib/site";
 import {
   fetchEventCounts,
+  fetchSearchNoResults,
   saveSettings,
   useShop,
   type Settings,
@@ -33,6 +38,7 @@ export const Route = createFileRoute("/admin/")({
 const tabs = [
   "Dashboard",
   "Productos",
+  "Importar / Exportar",
   "Categorías",
   "Marcas",
   "Sucursales",
@@ -175,20 +181,9 @@ function AdminDashboard() {
           </section>
         ) : null}
 
-        {tab === "Sucursales" ? (
-          <section className="rounded-md border border-rule bg-card p-5">
-            <h2 className="font-display text-2xl text-ink">Sucursales</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Las tres sucursales de Recoleta se editan desde el código de contenido confirmado. Horarios
-              de sábado distintos: cierran al mediodía. Domingos cerrado.
-            </p>
-            <ul className="mt-5 space-y-3 text-sm">
-              <li>Av. Callao 1588 · 11 6849-9976 · Lun–Vie 9–20 · Sáb 9:30–13</li>
-              <li>Av. Callao 1377 · 11 4815-3186 / 11 5030-7824 · Lun–Vie 9–20 · Sáb 9:30–13</li>
-              <li>Ayacucho 1762 · 11 3927-1244 · Lun–Vie 9–20 · Sáb 9–13</li>
-            </ul>
-          </section>
-        ) : null}
+        {tab === "Importar / Exportar" ? <AdminImportExport /> : null}
+
+        {tab === "Sucursales" ? <LocationManager /> : null}
 
         {tab === "Servicios" ? (
           <section className="rounded-md border border-rule bg-card p-5">
@@ -204,9 +199,11 @@ function AdminDashboard() {
           </section>
         ) : null}
 
-        {tab === "Banners" || tab === "Promociones" ? (
+        {tab === "Banners" ? <HeroManager /> : null}
+
+        {tab === "Promociones" ? (
           <section className="rounded-md border border-rule bg-card p-5">
-            <h2 className="font-display text-2xl text-ink">{tab}</h2>
+            <h2 className="font-display text-2xl text-ink">Promociones</h2>
             <p className="mt-2 max-w-[56ch] text-sm text-muted-foreground">
               No hay promociones, envíos ni financiación publicados hasta que se confirmen. Cuando haya
               una campaña real, cargala acá y en Configuración, sin inventar beneficios.
@@ -297,9 +294,90 @@ function AdminDashboard() {
                 Último: {shop.stats.lastEvent.eventName}
               </p>
             ) : null}
+            <SearchNoResults />
           </section>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function AdminImportExport() {
+  const [rows, setRows] = useState<ProductRow[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+
+  const load = async () => {
+    setStatus("loading");
+    const data = await fetchManagedProducts();
+    setRows(data);
+    setStatus("ready");
+  };
+
+  useEffect(() => {
+    void load().catch(() => setStatus("error"));
+  }, []);
+
+  if (status === "error") {
+    return (
+      <div className="rounded-md border border-rule bg-card p-5">
+        <p className="font-display text-xl text-ink">No se pudo cargar el catálogo</p>
+        <button
+          type="button"
+          onClick={() => void load().catch(() => setStatus("error"))}
+          className="ui-text mt-3 rounded-sm border border-ink/20 px-4 py-2 text-[12px] uppercase tracking-[0.08em]"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {status === "loading" ? (
+        <p className="mb-4 text-sm text-muted-foreground">Cargando productos…</p>
+      ) : null}
+      <CatalogImport rows={rows} onReload={load} />
+    </div>
+  );
+}
+
+function SearchNoResults() {
+  const [items, setItems] = useState<{ query: string; count: number }[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+
+  useEffect(() => {
+    void fetchSearchNoResults()
+      .then((data) => {
+        setItems(data);
+        setStatus("ready");
+      })
+      .catch(() => setStatus("error"));
+  }, []);
+
+  return (
+    <div className="mt-8 border-t border-rule pt-6">
+      <h3 className="font-display text-2xl text-ink">Búsquedas sin resultados</h3>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Consultas reales del buscador que no devolvieron productos. No se guardan datos personales.
+      </p>
+      {status === "loading" ? <p className="mt-3 text-sm text-muted-foreground">Cargando…</p> : null}
+      {status === "error" ? (
+        <p className="mt-3 text-sm text-muted-foreground">No se pudieron leer las búsquedas.</p>
+      ) : null}
+      {status === "ready" && !items.length ? (
+        <p className="mt-3 text-sm text-muted-foreground">Todavía no hay búsquedas sin resultado.</p>
+      ) : null}
+      {items.length ? (
+        <ul className="mt-4 divide-y divide-rule">
+          {items.map((item) => (
+            <li key={item.query} className="flex items-center justify-between py-2 text-sm">
+              <span>“{item.query}”</span>
+              <span className="tabular-nums text-primary">{item.count}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

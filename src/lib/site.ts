@@ -114,7 +114,7 @@ export const navLinks = [
   { label: "Oficina", href: "/productos", category: "Oficina" },
   { label: "Papelería", href: "/productos", category: "Papelería" },
   { label: "Escritura", href: "/productos", category: "Escritura" },
-  { label: "Sucursales", href: "/#sucursales", category: "" },
+  { label: "Sucursales", href: "/sucursales", category: "" },
   { label: "Lista escolar", href: "/lista-escolar", category: "" },
 ];
 

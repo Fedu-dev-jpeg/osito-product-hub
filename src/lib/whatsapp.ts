@@ -30,7 +30,7 @@ export function whatsappMessage(context: WhatsAppContext) {
       return `Hola, quería consultar con la sucursal de ${context.address}.`;
     case "search":
       return context.query
-        ? `Hola, buscaba “${context.query}” y no lo encontré en la web. ¿Me ayudan?`
+        ? `Hola, busqué ‘${context.query}’ en la web y quería consultar si lo tienen.`
         : "Hola, quería consultar disponibilidad de un producto.";
     case "custom":
       return context.text;

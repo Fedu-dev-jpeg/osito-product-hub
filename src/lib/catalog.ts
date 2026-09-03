@@ -222,3 +222,85 @@ export async function deleteCatalogProduct(id: string): Promise<void> {
   const { error } = await getSupabase().from("products").delete().eq("id", id);
   if (error) throw error;
 }
+
+export async function bulkUpdateProducts(
+  ids: string[],
+  patch: Partial<{
+    published: boolean;
+    featured: boolean;
+    category: string;
+    brand: string;
+  }>,
+): Promise<void> {
+  if (!ids.length) return;
+  const { error } = await getSupabase().from("products").update(patch).in("id", ids);
+  if (error) throw error;
+}
+
+export async function bulkDeleteProducts(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  const { error } = await getSupabase().from("products").delete().in("id", ids);
+  if (error) throw error;
+}
+
+export async function fetchProductsBySkus(skus: string[]): Promise<ProductRow[]> {
+  const clean = skus.map((sku) => sku.trim()).filter(Boolean);
+  if (!clean.length) return [];
+  const { data, error } = await getSupabase().from("products").select("*").in("sku", clean);
+  if (error) throw error;
+  return (data ?? []) as ProductRow[];
+}
+
+export async function importCatalogRows(
+  rows: {
+    sku: string;
+    name: string;
+    brand: string;
+    category: string;
+    subcategory: string;
+    description: string;
+    price: number;
+    compare: number;
+    published: boolean;
+    featured: boolean;
+    isNew: boolean;
+    badge: string;
+    image: string;
+    inventory: number;
+    sortOrder: number;
+  }[],
+  ownerId: string,
+  mode: "update" | "skip",
+): Promise<void> {
+  const existing = await fetchManagedProducts();
+  const bySku = new Map(
+    existing
+      .filter((row) => row.sku)
+      .map((row) => [String(row.sku).trim().toLowerCase(), row]),
+  );
+  for (const row of rows) {
+    const current = bySku.get(row.sku.toLowerCase());
+    if (current && mode === "skip") continue;
+    await saveCatalogProduct(
+      {
+        ...(current ? { id: current.id } : {}),
+        name: row.name,
+        description: row.description,
+        category: row.category,
+        subcategory: row.subcategory,
+        brand: row.brand,
+        price: row.price,
+        image_url: row.image || current?.image_url || "",
+        badge: row.badge,
+        published: row.published,
+        featured: row.featured,
+        is_new: row.isNew,
+        sku: row.sku,
+        compare_at_price: row.compare,
+        inventory_qty: row.inventory,
+        sort_order: row.sortOrder,
+      },
+      current?.owner_id ?? ownerId,
+    );
+  }
+}

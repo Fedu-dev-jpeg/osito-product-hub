@@ -53,13 +53,13 @@ export function SiteHeader() {
         <SearchBox />
 
         <div className="ui-text hidden items-center gap-4 lg:flex">
-          <a
-            href="/#sucursales"
+          <Link
+            to="/sucursales"
             className="text-[13px] text-ink hover:text-primary"
             onClick={() => track("select_store", { source: "header" })}
           >
             3 sucursales
-          </a>
+          </Link>
           {session && profile?.role === "admin" ? (
             <Link to="/admin" className="text-[13px] text-sepia hover:text-ink">
               Admin
