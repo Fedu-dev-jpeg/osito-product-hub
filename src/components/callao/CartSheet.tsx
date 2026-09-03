@@ -6,6 +6,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { formatARS } from "./data";
 import { removeFromCart, setCartQty, useShop } from "@/lib/shop-store";
 
@@ -16,6 +17,7 @@ export function CartSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const navigate = useNavigate();
   const { cart, products } = useShop();
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -114,11 +116,22 @@ export function CartSheet({
           </div>
           <button
             type="button"
+            disabled={cart.length === 0}
+            onClick={() => {
+              onOpenChange(false);
+              void navigate({ to: "/checkout" });
+            }}
+            className="ui-text w-full rounded-sm bg-primary px-4 py-3 text-[13px] uppercase tracking-[0.08em] text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            Finalizar compra
+          </button>
+          <Link
+            to="/productos"
             onClick={() => onOpenChange(false)}
-            className="ui-text w-full rounded-sm bg-primary px-4 py-3 text-[13px] uppercase tracking-[0.08em] text-primary-foreground hover:bg-primary/90"
+            className="ui-text mt-2 block w-full rounded-sm border border-ink/20 px-4 py-3 text-center text-[13px] uppercase tracking-[0.08em] text-ink"
           >
             Seguir comprando
-          </button>
+          </Link>
         </div>
       </SheetContent>
     </Sheet>

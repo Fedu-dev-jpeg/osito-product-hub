@@ -10,20 +10,29 @@ import {
   uploadProductImage,
   type ProductRow,
 } from "@/lib/catalog";
+import { catalogCategories, knownBrands } from "@/lib/site";
 import { refreshCatalog } from "@/lib/shop-store";
 import { useAuth } from "@/lib/auth";
+
+const categories = catalogCategories.map((c) => c.name);
 
 const emptyForm = {
   id: "",
   name: "",
-  category: "Libros",
+  category: "Escolar",
   subcategory: "",
+  brand: "",
   description: "",
   price: "",
+  compare: "",
+  sku: "",
+  inventory: "0",
   badge: "",
+  sort: "0",
+  featured: false,
+  isNew: false,
+  isOffer: false,
 };
-
-const categories = ["Libros", "Papelería", "Escritura", "Escolar", "Agendas"];
 
 export function ProductManager({ canPublish }: { canPublish: boolean }) {
   const { user, profile } = useAuth();
@@ -75,9 +84,17 @@ export function ProductManager({ canPublish }: { canPublish: boolean }) {
           description: form.description,
           category: form.category,
           subcategory: form.subcategory,
+          brand: form.brand,
           price: Number(form.price) || 0,
           image_url: imageUrl || existing?.image_url || "",
           badge: form.badge,
+          sku: form.sku,
+          compare_at_price: Number(form.compare) || 0,
+          inventory_qty: Number(form.inventory) || 0,
+          sort_order: Number(form.sort) || 0,
+          featured: form.featured,
+          is_new: form.isNew,
+          is_offer: form.isOffer,
           published: canPublish ? (editing ? Boolean(existing?.published) : publishNow) : false,
         },
         existing?.owner_id ?? user.id,
@@ -138,10 +155,30 @@ export function ProductManager({ canPublish }: { canPublish: boolean }) {
               <input
                 value={form.subcategory}
                 onChange={(e) => setForm({ ...form, subcategory: e.target.value })}
+                list="callao-subs"
                 className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
               />
             </label>
           </div>
+          <datalist id="callao-subs">
+            {(catalogCategories.find((c) => c.name === form.category)?.subs ?? []).map((sub) => (
+              <option key={sub} value={sub} />
+            ))}
+          </datalist>
+          <label className="ui-text flex flex-col gap-1.5 text-[13px]">
+            Marca
+            <input
+              value={form.brand}
+              onChange={(e) => setForm({ ...form, brand: e.target.value })}
+              list="callao-brands"
+              className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
+            />
+            <datalist id="callao-brands">
+              {knownBrands.map((brand) => (
+                <option key={brand} value={brand} />
+              ))}
+            </datalist>
+          </label>
           <label className="ui-text flex flex-col gap-1.5 text-[13px]">
             Descripción
             <textarea
@@ -155,7 +192,6 @@ export function ProductManager({ canPublish }: { canPublish: boolean }) {
             <label className="ui-text flex flex-col gap-1.5 text-[13px]">
               Precio (ARS)
               <input
-                required
                 type="number"
                 min="0"
                 value={form.price}
@@ -164,12 +200,79 @@ export function ProductManager({ canPublish }: { canPublish: boolean }) {
               />
             </label>
             <label className="ui-text flex flex-col gap-1.5 text-[13px]">
+              Precio anterior
+              <input
+                type="number"
+                min="0"
+                value={form.compare}
+                onChange={(e) => setForm({ ...form, compare: e.target.value })}
+                className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
+              />
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="ui-text flex flex-col gap-1.5 text-[13px]">
+              SKU
+              <input
+                value={form.sku}
+                onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
+              />
+            </label>
+            <label className="ui-text flex flex-col gap-1.5 text-[13px]">
+              Inventario
+              <input
+                type="number"
+                min="0"
+                value={form.inventory}
+                onChange={(e) => setForm({ ...form, inventory: e.target.value })}
+                className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
+              />
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="ui-text flex flex-col gap-1.5 text-[13px]">
               Badge
               <input
                 value={form.badge}
                 onChange={(e) => setForm({ ...form, badge: e.target.value })}
                 className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
               />
+            </label>
+            <label className="ui-text flex flex-col gap-1.5 text-[13px]">
+              Orden
+              <input
+                type="number"
+                value={form.sort}
+                onChange={(e) => setForm({ ...form, sort: e.target.value })}
+                className="h-10 rounded-sm border border-ink/25 bg-background px-3 text-sm text-ink outline-none focus:border-gold"
+              />
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-4">
+            <label className="ui-text flex items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={form.featured}
+                onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+              />
+              Destacado
+            </label>
+            <label className="ui-text flex items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={form.isNew}
+                onChange={(e) => setForm({ ...form, isNew: e.target.checked })}
+              />
+              Novedad
+            </label>
+            <label className="ui-text flex items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={form.isOffer}
+                onChange={(e) => setForm({ ...form, isOffer: e.target.checked })}
+              />
+              Oferta
             </label>
           </div>
           <label className="ui-text flex flex-col gap-1.5 text-[13px]">
@@ -239,7 +342,8 @@ export function ProductManager({ canPublish }: { canPublish: boolean }) {
                 <p className="ui-text text-[12px] text-muted-foreground">
                   {row.category}
                   {row.subcategory ? ` · ${row.subcategory}` : ""} · {formatARS(row.price)} ·{" "}
-                  {row.published ? "publicado" : "pendiente"}
+                  {row.sku ? `${row.sku} · ` : ""}
+                  stock {row.inventory_qty ?? 0} · {row.published ? "activo" : "borrador"}
                 </p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
@@ -274,9 +378,17 @@ export function ProductManager({ canPublish }: { canPublish: boolean }) {
                       name: row.name,
                       category: row.category,
                       subcategory: row.subcategory ?? "",
+                      brand: row.brand ?? "",
                       description: row.description,
                       price: String(row.price),
+                      compare: row.compare_at_price ? String(row.compare_at_price) : "",
+                      sku: row.sku ?? "",
+                      inventory: String(row.inventory_qty ?? 0),
                       badge: row.badge ?? "",
+                      sort: String(row.sort_order ?? 0),
+                      featured: Boolean(row.featured),
+                      isNew: Boolean(row.is_new),
+                      isOffer: Boolean(row.is_offer),
                     });
                     setImageUrl(row.image_url);
                     setPublishNow(row.published);

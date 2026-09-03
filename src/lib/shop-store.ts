@@ -1,12 +1,36 @@
 import { useSyncExternalStore } from "react";
 import { products as defaultProducts, type Product } from "@/components/callao/data";
 import { fetchPublishedProducts } from "@/lib/catalog";
+import { sanitizeId, sanitizeText } from "@/lib/sanitize";
+import {
+  DEFAULT_EMAIL,
+  DEFAULT_WHATSAPP,
+  INSTAGRAM_URL,
+  GOOGLE_REVIEWS_URL,
+  SITE_CUIT,
+  SITE_LEGAL_NAME,
+  SITE_TAGLINE,
+} from "@/lib/site";
+import { getSupabase } from "@/lib/supabase";
 
-export const PRODUCT_KEY = "libreria_callao_products";
-export const SETTINGS_KEY = "libreria_callao_settings";
-export const STATS_KEY = "libreria_callao_stats";
-export const CART_KEY = "libreria_callao_cart";
-export const FAVORITES_KEY = "libreria_callao_favorites";
+export const PRODUCT_KEY = "libreria_callao_products_v3";
+export const SETTINGS_KEY = "libreria_callao_settings_v3";
+export const STATS_KEY = "libreria_callao_stats_v3";
+export const CART_KEY = "libreria_callao_cart_v3";
+export const FAVORITES_KEY = "libreria_callao_favorites_v3";
+
+const TRACKABLE = new Set([
+  "click_whatsapp",
+  "click_phone",
+  "click_maps",
+  "select_store",
+  "send_school_list",
+  "instagram_click",
+  "facebook_click",
+  "search",
+  "view_item",
+  "select_category",
+]);
 
 export type CartItem = { id: string; name: string; price: number; qty: number };
 export type TrackedEvent = {
@@ -21,10 +45,16 @@ export type Settings = {
   googleAnalyticsId: string;
   metaPixelId: string;
   whatsapp: string;
-  freeShippingFrom: number;
-  campaignName: string;
-  campaignBudget: string;
-  campaignAudience: string;
+  email: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  googleReviewsUrl: string;
+  legalName: string;
+  cuit: string;
+  tagline: string;
+  heroEyebrow: string;
+  heroTitle: string;
+  heroDescription: string;
 };
 
 type ShopState = {
@@ -34,6 +64,24 @@ type ShopState = {
   stats: Stats;
   query: string;
   category: string;
+  settings: Settings;
+};
+
+export const defaultSettings: Settings = {
+  googleAnalyticsId: "",
+  metaPixelId: "",
+  whatsapp: DEFAULT_WHATSAPP,
+  email: DEFAULT_EMAIL,
+  instagramUrl: INSTAGRAM_URL,
+  facebookUrl: "",
+  googleReviewsUrl: GOOGLE_REVIEWS_URL,
+  legalName: SITE_LEGAL_NAME,
+  cuit: SITE_CUIT,
+  tagline: SITE_TAGLINE,
+  heroEyebrow: "3 sucursales en Recoleta",
+  heroTitle: "Todo para estudiar, trabajar y crear",
+  heroDescription:
+    "Librería escolar, comercial y artística. Papelería, escritura, oficina, impresión y mucho más en tres sucursales de Recoleta.",
 };
 
 const initialState: ShopState = {
@@ -43,6 +91,7 @@ const initialState: ShopState = {
   stats: {},
   query: "",
   category: "Todos",
+  settings: defaultSettings,
 };
 
 let state: ShopState = initialState;
@@ -67,19 +116,44 @@ function write(key: string, value: unknown) {
   }
 }
 
+function cleanSettings(partial: Partial<Settings> | null | undefined): Settings {
+  const merged = { ...defaultSettings, ...(partial ?? {}) };
+  if (/4372.?0000/.test(merged.whatsapp) || /hola@libreriacallao/.test(merged.email)) {
+    merged.whatsapp = DEFAULT_WHATSAPP;
+    merged.email = DEFAULT_EMAIL;
+  }
+  return {
+    ...merged,
+    googleAnalyticsId: sanitizeId(merged.googleAnalyticsId),
+    metaPixelId: sanitizeId(merged.metaPixelId),
+    whatsapp: sanitizeText(merged.whatsapp, 20).replace(/\D/g, "") || DEFAULT_WHATSAPP,
+    email: sanitizeText(merged.email, 80) || DEFAULT_EMAIL,
+    instagramUrl: sanitizeText(merged.instagramUrl, 200) || INSTAGRAM_URL,
+    facebookUrl: sanitizeText(merged.facebookUrl, 200),
+    googleReviewsUrl: sanitizeText(merged.googleReviewsUrl, 400) || GOOGLE_REVIEWS_URL,
+    legalName: sanitizeText(merged.legalName, 80) || SITE_LEGAL_NAME,
+    cuit: sanitizeText(merged.cuit, 20) || SITE_CUIT,
+    tagline: sanitizeText(merged.tagline, 80) || SITE_TAGLINE,
+    heroEyebrow: sanitizeText(merged.heroEyebrow, 80),
+    heroTitle: sanitizeText(merged.heroTitle, 120),
+    heroDescription: sanitizeText(merged.heroDescription, 400),
+  };
+}
+
 function hydrate() {
   if (hydrated || typeof window === "undefined") return;
   hydrated = true;
   const storedProducts = read<Product[] | null>(PRODUCT_KEY, null);
   state = {
     ...state,
-    products:
-      Array.isArray(storedProducts) && storedProducts.length ? storedProducts : defaultProducts,
+    products: Array.isArray(storedProducts) ? storedProducts : [],
     cart: read<CartItem[]>(CART_KEY, []),
     favorites: read<string[]>(FAVORITES_KEY, []),
     stats: read<Stats>(STATS_KEY, {}),
+    settings: cleanSettings(read<Partial<Settings>>(SETTINGS_KEY, {})),
   };
   void refreshCatalog();
+  void refreshSettings();
 }
 
 function emit() {
@@ -133,6 +207,11 @@ export function track(eventName: string, details: Record<string, unknown> = {}) 
     w.gtag?.("event", eventName, details);
     w.fbq?.("trackCustom", eventName, details);
   }
+  if (TRACKABLE.has(eventName)) {
+    void Promise.resolve(
+      getSupabase().from("site_events").insert({ event_name: eventName, details }),
+    ).catch(() => undefined);
+  }
 }
 
 export function setProducts(products: Product[]) {
@@ -144,9 +223,25 @@ export function setProducts(products: Product[]) {
 export async function refreshCatalog() {
   try {
     const products = await fetchPublishedProducts();
-    if (products.length) setProducts(products);
+    setProducts(products);
   } catch {
     // Keep the last known catalog if the backend is unreachable.
+  }
+}
+
+export async function refreshSettings() {
+  try {
+    const { data, error } = await getSupabase()
+      .from("site_settings")
+      .select("payload")
+      .eq("id", "default")
+      .maybeSingle();
+    if (error || !data) return;
+    const next = cleanSettings(data.payload as Partial<Settings>);
+    write(SETTINGS_KEY, next);
+    setState({ settings: next });
+  } catch {
+    // Keep local settings.
   }
 }
 
@@ -174,7 +269,6 @@ export function addToCart(product: Product) {
   else cart.push({ id: product.id, name: product.name, price: product.price, qty: 1 });
   write(CART_KEY, cart);
   setState({ cart });
-  track("add_to_cart", { productId: product.id, price: product.price });
 }
 
 export function setCartQty(id: string, qty: number) {
@@ -194,6 +288,12 @@ export function removeFromCart(id: string) {
   setState({ cart });
 }
 
+export function clearCart() {
+  hydrate();
+  write(CART_KEY, []);
+  setState({ cart: [] });
+}
+
 export function toggleFavorite(productId: string) {
   hydrate();
   const favorites = state.favorites.includes(productId)
@@ -201,7 +301,6 @@ export function toggleFavorite(productId: string) {
     : [...state.favorites, productId];
   write(FAVORITES_KEY, favorites);
   setState({ favorites });
-  track("favorite_toggle", { productId });
 }
 
 export function setQuery(query: string) {
@@ -212,25 +311,33 @@ export function setCategory(category: string) {
   hydrate();
   if (state.category !== category) {
     setState({ category });
-    track("category_click", { category });
+    if (category && category !== "Todos") track("select_category", { category });
   }
 }
 
-export const defaultSettings: Settings = {
-  googleAnalyticsId: "",
-  metaPixelId: "",
-  whatsapp: "+541143720000",
-  freeShippingFrom: 80000,
-  campaignName: "",
-  campaignBudget: "",
-  campaignAudience: "",
-};
-
 export function getSettings(): Settings {
-  return { ...defaultSettings, ...read<Partial<Settings>>(SETTINGS_KEY, {}) };
+  hydrate();
+  return state.settings;
 }
 
-export function saveSettings(settings: Settings) {
-  write(SETTINGS_KEY, settings);
+export async function saveSettings(settings: Settings) {
+  const next = cleanSettings(settings);
+  write(SETTINGS_KEY, next);
+  setState({ settings: next });
   track("admin_settings_update");
+  const { error } = await getSupabase()
+    .from("site_settings")
+    .upsert({ id: "default", payload: next, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
+export async function fetchEventCounts() {
+  const { data, error } = await getSupabase().from("site_events").select("event_name");
+  if (error) throw error;
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) {
+    const name = (row as { event_name: string }).event_name;
+    counts[name] = (counts[name] ?? 0) + 1;
+  }
+  return counts;
 }

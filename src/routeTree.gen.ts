@@ -12,7 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as CuentaRouteImport } from './routes/cuenta'
+import { Route as ListaEscolarRouteImport } from './routes/lista-escolar'
+import { Route as ProductosRouteImport } from './routes/productos'
 import { Route as VendedorRouteImport } from './routes/vendedor'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as ProductosIndexRouteImport } from './routes/productos.index'
+import { Route as ProductosSlugRouteImport } from './routes/productos.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,43 +37,144 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CuentaRoute = CuentaRouteImport.update({
+  id: '/cuenta',
+  path: '/cuenta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ListaEscolarRoute = ListaEscolarRouteImport.update({
+  id: '/lista-escolar',
+  path: '/lista-escolar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductosRoute = ProductosRouteImport.update({
+  id: '/productos',
+  path: '/productos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VendedorRoute = VendedorRouteImport.update({
   id: '/vendedor',
   path: '/vendedor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
+const ProductosIndexRoute = ProductosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProductosRoute,
+} as any)
+const ProductosSlugRoute = ProductosSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ProductosRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/checkout': typeof CheckoutRoute
+  '/cuenta': typeof CuentaRoute
+  '/lista-escolar': typeof ListaEscolarRoute
+  '/productos': typeof ProductosRouteWithChildren
   '/vendedor': typeof VendedorRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/productos/$slug': typeof ProductosSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/productos/': typeof ProductosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/checkout': typeof CheckoutRoute
+  '/cuenta': typeof CuentaRoute
+  '/lista-escolar': typeof ListaEscolarRoute
   '/vendedor': typeof VendedorRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/productos/$slug': typeof ProductosSlugRoute
+  '/admin': typeof AdminIndexRoute
+  '/productos': typeof ProductosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/checkout': typeof CheckoutRoute
+  '/cuenta': typeof CuentaRoute
+  '/lista-escolar': typeof ListaEscolarRoute
+  '/productos': typeof ProductosRouteWithChildren
   '/vendedor': typeof VendedorRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/productos/$slug': typeof ProductosSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/productos/': typeof ProductosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/auth' | '/vendedor'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/checkout'
+    | '/cuenta'
+    | '/lista-escolar'
+    | '/productos'
+    | '/vendedor'
+    | '/admin/login'
+    | '/productos/$slug'
+    | '/admin/'
+    | '/productos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/auth' | '/vendedor'
-  id: '__root__' | '/' | '/admin' | '/auth' | '/vendedor'
+  to:
+    | '/'
+    | '/auth'
+    | '/checkout'
+    | '/cuenta'
+    | '/lista-escolar'
+    | '/vendedor'
+    | '/admin/login'
+    | '/productos/$slug'
+    | '/admin'
+    | '/productos'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/checkout'
+    | '/cuenta'
+    | '/lista-escolar'
+    | '/productos'
+    | '/vendedor'
+    | '/admin/login'
+    | '/productos/$slug'
+    | '/admin/'
+    | '/productos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  CheckoutRoute: typeof CheckoutRoute
+  CuentaRoute: typeof CuentaRoute
+  ListaEscolarRoute: typeof ListaEscolarRoute
+  ProductosRoute: typeof ProductosRouteWithChildren
   VendedorRoute: typeof VendedorRoute
 }
 
@@ -92,6 +201,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cuenta': {
+      id: '/cuenta'
+      path: '/cuenta'
+      fullPath: '/cuenta'
+      preLoaderRoute: typeof CuentaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lista-escolar': {
+      id: '/lista-escolar'
+      path: '/lista-escolar'
+      fullPath: '/lista-escolar'
+      preLoaderRoute: typeof ListaEscolarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/productos': {
+      id: '/productos'
+      path: '/productos'
+      fullPath: '/productos'
+      preLoaderRoute: typeof ProductosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vendedor': {
       id: '/vendedor'
       path: '/vendedor'
@@ -99,13 +236,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendedorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/productos/': {
+      id: '/productos/'
+      path: '/'
+      fullPath: '/productos/'
+      preLoaderRoute: typeof ProductosIndexRouteImport
+      parentRoute: typeof ProductosRoute
+    }
+    '/productos/$slug': {
+      id: '/productos/$slug'
+      path: '/$slug'
+      fullPath: '/productos/$slug'
+      preLoaderRoute: typeof ProductosSlugRouteImport
+      parentRoute: typeof ProductosRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminLoginRoute: AdminLoginRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface ProductosRouteChildren {
+  ProductosSlugRoute: typeof ProductosSlugRoute
+  ProductosIndexRoute: typeof ProductosIndexRoute
+}
+
+const ProductosRouteChildren: ProductosRouteChildren = {
+  ProductosSlugRoute: ProductosSlugRoute,
+  ProductosIndexRoute: ProductosIndexRoute,
+}
+
+const ProductosRouteWithChildren = ProductosRoute._addFileChildren(
+  ProductosRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  CheckoutRoute: CheckoutRoute,
+  CuentaRoute: CuentaRoute,
+  ListaEscolarRoute: ListaEscolarRoute,
+  ProductosRoute: ProductosRouteWithChildren,
   VendedorRoute: VendedorRoute,
 }
 export const routeTree = rootRouteImport

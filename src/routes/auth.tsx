@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { pageShell } from "@/components/callao/data";
-import { useAuth } from "@/lib/auth";
+import { homePathForRole, useAuth } from "@/lib/auth";
 
 type AuthSearch = {
   next?: string;
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/auth")({
     return next ? { next } : {};
   },
   head: () => ({
-    meta: [{ title: "Entrar — Librería Callao" }, { name: "robots", content: "noindex" }],
+    meta: [{ title: "Mi cuenta — Librería Callao" }, { name: "robots", content: "noindex" }],
   }),
   component: AuthPage,
 });
@@ -22,7 +22,7 @@ function AuthPage() {
   const { next } = Route.useSearch();
   const navigate = useNavigate();
   const { session, profile, loading, signIn, signUp, signInWithGoogle } = useAuth();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "vendedor">("login");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,10 +30,22 @@ function AuthPage() {
 
   useEffect(() => {
     if (loading || !session || !profile) return;
-    const fallback = profile.role === "admin" ? "/admin" : "/vendedor";
-    const target = next && next.startsWith("/") ? next : fallback;
-    if (target === "/admin") void navigate({ to: "/admin" });
-    else if (target === "/vendedor") void navigate({ to: "/vendedor" });
+    const fallback = homePathForRole(profile.role);
+    const storefront =
+      next &&
+      (next.startsWith("/checkout") || next.startsWith("/cuenta") || next.startsWith("/productos"));
+    if (profile.role === "admin") {
+      void navigate({ to: "/admin" });
+      return;
+    }
+    if (profile.role === "vendedor") {
+      void navigate({ to: "/vendedor" });
+      return;
+    }
+    if (storefront && next === "/checkout") void navigate({ to: "/checkout" });
+    else if (storefront && next === "/cuenta") void navigate({ to: "/cuenta" });
+    else if (storefront && next.startsWith("/productos")) void navigate({ to: "/productos" });
+    else if (fallback === "/cuenta") void navigate({ to: "/cuenta" });
     else void navigate({ to: "/" });
   }, [loading, session, profile, next, navigate]);
 
@@ -43,7 +55,9 @@ function AuthPage() {
     setError("");
     try {
       const message =
-        mode === "login" ? await signIn(identifier, password) : await signUp(identifier, password);
+        mode === "login"
+          ? await signIn(identifier, password)
+          : await signUp(identifier, password, mode === "vendedor" ? "vendedor" : "cliente");
       if (message) setError(message);
     } finally {
       setBusy(false);
@@ -55,28 +69,23 @@ function AuthPage() {
     setError("");
     const message = await signInWithGoogle();
     if (message) {
-      setError(
-        /provider is not enabled|Unsupported provider/i.test(message)
-          ? "Google todavía no está habilitado. Entrá con usuario admin y la contraseña."
-          : message,
-      );
+      setError(message);
       setBusy(false);
     }
   };
+
+  const title =
+    mode === "login" ? "Iniciar sesión" : mode === "vendedor" ? "Cuenta vendedor" : "Crear cuenta";
 
   return (
     <div className="grain min-h-screen bg-background text-foreground">
       <div className={`${pageShell} flex min-h-screen items-center justify-center py-12`}>
         <div className="w-full max-w-md rounded-md border border-rule bg-card p-6 shadow-sm md:p-8">
-          <p className="ui-text text-[11px] uppercase tracking-[0.2em] text-gold">
-            Librería Callao
-          </p>
-          <h1 className="mt-2 font-display text-4xl text-ink">
-            {mode === "login" ? "Entrar" : "Crear cuenta vendedor"}
-          </h1>
+          <p className="ui-text text-[11px] uppercase tracking-[0.2em] text-gold">Mi cuenta</p>
+          <h1 className="mt-2 font-display text-4xl text-ink">{title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Admin: usuario <strong>admin</strong> y tu contraseña. Los vendedores entran con email o
-            Google y cargan productos en /vendedor. Solo el admin publica en /admin.
+            Clientes: pedidos y códigos de descuento. Si entras con usuario <strong>admin</strong>{" "}
+            vas al panel de la tienda.
           </p>
 
           <button
@@ -123,20 +132,38 @@ function AuthPage() {
               disabled={busy}
               className="ui-text mt-1 h-11 rounded-sm bg-primary text-[13px] uppercase tracking-[0.08em] text-primary-foreground disabled:opacity-60"
             >
-              {mode === "login" ? "Entrar" : "Registrarme como vendedor"}
+              {mode === "login"
+                ? "Entrar"
+                : mode === "vendedor"
+                  ? "Registrarme como vendedor"
+                  : "Crear cuenta"}
             </button>
           </form>
 
-          <button
-            type="button"
-            className="ui-text mt-4 text-[12px] text-sepia hover:text-ink"
-            onClick={() => {
-              setMode(mode === "login" ? "signup" : "login");
-              setError("");
-            }}
-          >
-            {mode === "login" ? "¿Sos vendedor? Crear cuenta" : "Ya tengo cuenta"}
-          </button>
+          <div className="mt-4 flex flex-col gap-2">
+            <button
+              type="button"
+              className="ui-text text-left text-[12px] text-sepia hover:text-ink"
+              onClick={() => {
+                setMode(mode === "login" ? "signup" : "login");
+                setError("");
+              }}
+            >
+              {mode === "login" ? "¿Primera vez? Crear cuenta" : "Ya tengo cuenta"}
+            </button>
+            {mode !== "vendedor" ? (
+              <button
+                type="button"
+                className="ui-text text-left text-[12px] text-sepia hover:text-ink"
+                onClick={() => {
+                  setMode("vendedor");
+                  setError("");
+                }}
+              >
+                ¿Sos vendedor? Crear cuenta de carga
+              </button>
+            ) : null}
+          </div>
 
           <Link to="/" className="ui-text mt-6 block text-[12px] text-primary">
             Volver a la tienda

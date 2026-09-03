@@ -15,6 +15,7 @@ import { AnalyticsScripts } from "@/components/callao/AnalyticsScripts";
 import { ClickTracker } from "@/components/callao/ClickTracker";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site";
 
 function NotFoundComponent() {
   return (
@@ -81,10 +82,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Librería Callao" },
-      { name: "description", content: "Libros y papelería en Buenos Aires desde 1948." },
+      { title: SITE_TITLE },
+      { name: "description", content: SITE_DESCRIPTION },
+      { property: "og:title", content: SITE_TITLE },
+      { property: "og:description", content: SITE_DESCRIPTION },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: SITE_TITLE },
+      { name: "twitter:description", content: SITE_DESCRIPTION },
+      { property: "og:image", content: "/og-cover.webp" },
+      { name: "twitter:image", content: "/og-cover.webp" },
     ],
     links: [
       {
