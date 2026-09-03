@@ -66,6 +66,8 @@ const FALLBACK: HeroSlide[] = [
   },
 ];
 
+const SLIDE_MS = 3000;
+
 function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
@@ -93,15 +95,31 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const reduced = prefersReducedMotion();
 
   useEffect(() => {
+    setPaused(false);
+    setIndex(0);
+  }, []);
+
+  useEffect(() => {
     if (reduced || paused || items.length < 2) return;
-    const timer = window.setInterval(() => {
-      setIndex((value) => (value + 1) % items.length);
-    }, 6000);
-    return () => window.clearInterval(timer);
+
+    let timer = 0;
+    const start = () => {
+      window.clearInterval(timer);
+      if (typeof document !== "undefined" && document.hidden) return;
+      timer = window.setInterval(() => {
+        setIndex((value) => (value + 1) % items.length);
+      }, SLIDE_MS);
+    };
+
+    start();
+    document.addEventListener("visibilitychange", start);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", start);
+    };
   }, [items.length, paused, reduced]);
 
   const go = (next: number) => {
-    setPaused(true);
     setIndex((next + items.length) % items.length);
   };
 
